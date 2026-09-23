@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
@@ -9,31 +9,59 @@ import { AuthResponse } from '../../core/models/auth.model';
   selector: 'app-header',
   template: `
     <!-- Top Bar Shopee Style -->
-    <div class="top-bar text-white py-1 small">
+    <div class="top-bar text-white py-1 small position-relative">
       <div class="container d-flex justify-content-between align-items-center">
-        <div class="d-flex align-items-center gap-3">
+        <div class="d-flex align-items-center gap-2 gap-md-3">
           <span><i class="fa-solid fa-phone me-1"></i> Hotline: <strong>1900 8888</strong> (8:00 - 22:00)</span>
           <span class="d-none d-md-inline text-white-50">|</span>
           <span class="d-none d-md-inline"><i class="fa-solid fa-truck-fast me-1"></i> Freeship toàn quốc đơn từ 300K</span>
+          <span class="d-none d-lg-inline text-white-50">|</span>
+
+          <!-- Order Tracking Search Bar beside Freeship -->
+          <div class="d-none d-md-flex align-items-center tracking-search-box">
+            <div class="input-group input-group-sm">
+              <input type="text" 
+                     [(ngModel)]="orderTrackingCode" 
+                     (keyup.enter)="onTrackOrder()"
+                     class="form-control form-control-sm border-0 py-0 px-2 tracking-input text-dark" 
+                     placeholder="Tra cứu đơn hàng...">
+              <button class="btn btn-sm btn-light text-primary fw-bold px-2 py-0" 
+                      type="button" 
+                      (click)="onTrackOrder()"
+                      title="Tra cứu đơn hàng">
+                <i class="fa-solid fa-magnifying-glass small"></i>
+              </button>
+            </div>
+          </div>
         </div>
         <div class="d-flex align-items-center gap-3">
           <a *ngIf="isAdmin$ | async" routerLink="/admin" class="badge bg-warning text-dark px-2 py-1 text-decoration-none">
             <i class="fa-solid fa-gauge-high me-1"></i> Quản Trị Admin
           </a>
 
+          <!-- Mobile Order Tracking Link -->
+          <a routerLink="/orders/tracking" class="d-md-none text-white text-decoration-none small">
+            <i class="fa-solid fa-magnifying-glass me-1"></i> Tra cứu
+          </a>
+
           <ng-container *ngIf="currentUser$ | async as user; else guestTpl">
-            <div class="dropdown">
-              <a class="dropdown-toggle text-white text-decoration-none d-flex align-items-center gap-1" href="#" role="button" data-bs-toggle="dropdown">
+            <div class="dropdown position-relative">
+              <button type="button"
+                      (click)="toggleUserMenu($event)"
+                      class="btn btn-link dropdown-toggle text-white text-decoration-none p-0 d-flex align-items-center gap-1 border-0 shadow-none">
                 <i class="fa-solid fa-circle-user fs-6"></i>
                 <span class="fw-semibold">{{ user.fullName || user.username }}</span>
-              </a>
-              <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end shadow" 
+                  [class.show]="isUserMenuOpen"
+                  style="position: absolute; right: 0; top: 100%; z-index: 1050; min-width: 200px;">
                 <li><span class="dropdown-item-text text-muted small">Quyền: <strong>{{ user.role }}</strong></span></li>
-                <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item" routerLink="/orders/my-orders"><i class="fa-solid fa-box me-2 text-primary"></i> Đơn hàng của tôi</a></li>
-                <li *ngIf="user.role === 'Admin'"><a class="dropdown-item" routerLink="/admin"><i class="fa-solid fa-gear me-2 text-warning"></i> Trang quản trị Admin</a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li><button class="dropdown-item text-danger" (click)="onLogout()"><i class="fa-solid fa-arrow-right-from-bracket me-2"></i> Đăng xuất</button></li>
+                <li><hr class="dropdown-divider my-1"></li>
+                <li><a class="dropdown-item py-2" routerLink="/orders/my-orders" (click)="isUserMenuOpen = false"><i class="fa-solid fa-box me-2 text-primary"></i> Đơn hàng của tôi</a></li>
+                <li><a class="dropdown-item py-2" routerLink="/orders/tracking" (click)="isUserMenuOpen = false"><i class="fa-solid fa-magnifying-glass me-2 text-info"></i> Tra cứu đơn hàng</a></li>
+                <li *ngIf="user.role === 'Admin'"><a class="dropdown-item py-2" routerLink="/admin" (click)="isUserMenuOpen = false"><i class="fa-solid fa-gear me-2 text-warning"></i> Trang quản trị Admin</a></li>
+                <li><hr class="dropdown-divider my-1"></li>
+                <li><button class="dropdown-item py-2 text-danger" (click)="onLogout()"><i class="fa-solid fa-arrow-right-from-bracket me-2"></i> Đăng xuất</button></li>
               </ul>
             </div>
           </ng-container>
@@ -110,6 +138,25 @@ import { AuthResponse } from '../../core/models/auth.model';
   styles: [`
     .top-bar {
       background: linear-gradient(90deg, #ff5722 0%, #ff7a00 100%);
+      position: relative;
+      z-index: 1030;
+    }
+    .tracking-search-box {
+      max-width: 230px;
+    }
+    .tracking-input {
+      border-radius: 20px 0 0 20px !important;
+      font-size: 0.75rem;
+      height: 26px;
+    }
+    .tracking-input:focus {
+      outline: none;
+      box-shadow: none;
+    }
+    .tracking-search-box .btn {
+      border-radius: 0 20px 20px 0 !important;
+      height: 26px;
+      font-size: 0.75rem;
     }
     .text-brand {
       color: #ff5722;
@@ -157,6 +204,8 @@ export class HeaderComponent implements OnInit {
   isAdmin$: Observable<boolean>;
   cartCount$: Observable<number>;
   searchKeyword: string = '';
+  orderTrackingCode: string = '';
+  isUserMenuOpen: boolean = false;
 
   constructor(
     private authService: AuthService,
@@ -170,6 +219,25 @@ export class HeaderComponent implements OnInit {
 
   ngOnInit(): void {}
 
+  toggleUserMenu(event: MouseEvent): void {
+    event.stopPropagation();
+    this.isUserMenuOpen = !this.isUserMenuOpen;
+  }
+
+  @HostListener('document:click')
+  onDocumentClick(): void {
+    this.isUserMenuOpen = false;
+  }
+
+  onTrackOrder(): void {
+    if (!this.orderTrackingCode || !this.orderTrackingCode.trim()) {
+      this.router.navigate(['/orders/tracking']);
+      return;
+    }
+    this.router.navigate(['/orders/tracking'], { queryParams: { code: this.orderTrackingCode.trim() } });
+    this.orderTrackingCode = '';
+  }
+
   onSearch(): void {
     if (!this.searchKeyword.trim()) return;
     // Tìm kiếm điều hướng sang /products hoặc /pets theo ngữ cảnh
@@ -182,6 +250,7 @@ export class HeaderComponent implements OnInit {
   }
 
   onLogout(): void {
+    this.isUserMenuOpen = false;
     this.authService.logout();
     this.router.navigate(['/']);
   }

@@ -11,13 +11,15 @@ import { Product } from '../../core/models/product.model';
       </span>
 
       <!-- Image with Native Lazy Loading -->
-      <a [routerLink]="['/products', product.id]" class="position-relative overflow-hidden d-block ratio ratio-1x1 bg-light">
-        <img [src]="product.imageUrl" 
-             [alt]="product.name" 
-             loading="lazy" 
-             class="card-img-top object-fit-cover w-100 h-100 product-img"
-             (error)="onImageError($event)">
-        <span class="position-absolute bottom-0 start-0 m-2 badge badge-freeship">
+      <a [routerLink]="['/products', product.id]" class="position-relative overflow-hidden d-block">
+        <div class="ratio ratio-1x1 bg-light">
+          <img [src]="product.imageUrl" 
+               [alt]="product.name" 
+               loading="lazy" 
+               class="card-img-top object-fit-cover w-100 h-100 product-img"
+               (error)="onImageError($event)">
+        </div>
+        <span class="position-absolute bottom-0 start-0 m-2 badge badge-freeship z-1">
           <i class="fa-solid fa-bolt me-1"></i> Freeship Xtra
         </span>
       </a>

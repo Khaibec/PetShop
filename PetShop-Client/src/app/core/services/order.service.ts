@@ -26,6 +26,10 @@ export class OrderService {
     return this.http.get<OrderDetail>(`${this.apiUrl}/${id}`);
   }
 
+  trackOrder(orderCode: string): Observable<OrderDetail> {
+    return this.http.get<OrderDetail>(`${this.apiUrl}/track/${encodeURIComponent(orderCode)}`);
+  }
+
   getAllOrders(pageNumber: number = 1, pageSize: number = 10, status?: string): Observable<PagedResult<OrderList>> {
     let params = new HttpParams()
       .set('pageNumber', pageNumber.toString())

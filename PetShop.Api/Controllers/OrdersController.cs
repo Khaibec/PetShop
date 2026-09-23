@@ -82,6 +82,24 @@ public class OrdersController : ControllerBase
         return Ok(order);
     }
 
+    [AllowAnonymous]
+    [HttpGet("track/{code}")]
+    public async Task<IActionResult> TrackOrderByCode(string code)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+        {
+            return BadRequest(new { message = "Vui lòng nhập mã đơn hàng" });
+        }
+
+        var order = await _orderService.GetOrderByCodeAsync(code);
+        if (order == null)
+        {
+            return NotFound(new { message = $"Không tìm thấy thông tin đơn hàng với mã '{code.Trim()}'" });
+        }
+
+        return Ok(order);
+    }
+
     [Authorize(Roles = "Admin")]
     [HttpGet]
     public async Task<IActionResult> GetAllOrders([FromQuery] PaginationParams pagination, [FromQuery] string? status)

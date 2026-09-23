@@ -12,6 +12,7 @@ public class Order
 
     public string CustomerName { get; set; } = string.Empty;
     public string PhoneNumber { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
     public string ShippingAddress { get; set; } = string.Empty;
     public string Note { get; set; } = string.Empty;
 

@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using PetShop.Api.Data;
 using PetShop.Api.DTOs;
@@ -9,6 +10,7 @@ public interface IOrderService
 {
     Task<OrderDetailDto> CreateOrderAsync(CreateOrderDto dto, int? userId = null);
     Task<OrderDetailDto?> GetOrderByIdAsync(int id, int? requestingUserId = null, bool isAdmin = false);
+    Task<OrderDetailDto?> GetOrderByCodeAsync(string orderCode);
     Task<IEnumerable<OrderListDto>> GetUserOrdersAsync(int userId);
     Task<PagedResult<OrderListDto>> GetAllOrdersAsync(PaginationParams pagination, string? status = null);
     Task<OrderDetailDto?> UpdateOrderStatusAsync(int id, UpdateOrderStatusDto dto);
@@ -29,7 +31,12 @@ public class OrderService : IOrderService
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            var orderCode = $"ORD-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString()[..6].ToUpper()}";
+            string orderCode;
+            do
+            {
+                var randomSuffix = RandomNumberGenerator.GetHexString(6).ToUpperInvariant();
+                orderCode = $"ORD-{DateTime.UtcNow:yyyyMMdd}-{randomSuffix}";
+            } while (await _context.Orders.AnyAsync(o => o.OrderCode == orderCode));
 
             var order = new Order
             {
@@ -37,6 +44,7 @@ public class OrderService : IOrderService
                 UserId = userId,
                 CustomerName = dto.CustomerName.Trim(),
                 PhoneNumber = dto.PhoneNumber.Trim(),
+                Email = dto.Email?.Trim() ?? string.Empty,
                 ShippingAddress = dto.ShippingAddress.Trim(),
                 Note = dto.Note?.Trim() ?? string.Empty,
                 PaymentMethod = dto.PaymentMethod,
@@ -147,12 +155,40 @@ public class OrderService : IOrderService
             return null;
         }
 
+        return MapToOrderDetailDto(order);
+    }
+
+    public async Task<OrderDetailDto?> GetOrderByCodeAsync(string orderCode)
+    {
+        if (string.IsNullOrWhiteSpace(orderCode))
+        {
+            return null;
+        }
+
+        var normalized = orderCode.Trim().ToUpperInvariant();
+
+        var order = await _context.Orders
+            .AsNoTracking()
+            .Include(o => o.Items)
+            .FirstOrDefaultAsync(o => o.OrderCode.ToUpper() == normalized);
+
+        if (order == null)
+        {
+            return null;
+        }
+
+        return MapToOrderDetailDto(order);
+    }
+
+    private static OrderDetailDto MapToOrderDetailDto(Order order)
+    {
         return new OrderDetailDto
         {
             Id = order.Id,
             OrderCode = order.OrderCode,
             CustomerName = order.CustomerName,
             PhoneNumber = order.PhoneNumber,
+            Email = order.Email,
             ShippingAddress = order.ShippingAddress,
             Note = order.Note,
             PaymentMethod = order.PaymentMethod,
@@ -192,6 +228,7 @@ public class OrderService : IOrderService
                 OrderCode = o.OrderCode,
                 CustomerName = o.CustomerName,
                 PhoneNumber = o.PhoneNumber,
+                Email = o.Email,
                 PaymentMethod = o.PaymentMethod,
                 PaymentStatus = o.PaymentStatus,
                 Status = o.Status,
@@ -232,6 +269,7 @@ public class OrderService : IOrderService
                 OrderCode = o.OrderCode,
                 CustomerName = o.CustomerName,
                 PhoneNumber = o.PhoneNumber,
+                Email = o.Email,
                 PaymentMethod = o.PaymentMethod,
                 PaymentStatus = o.PaymentStatus,
                 Status = o.Status,
@@ -317,6 +355,7 @@ public class OrderService : IOrderService
                 OrderCode = o.OrderCode,
                 CustomerName = o.CustomerName,
                 PhoneNumber = o.PhoneNumber,
+                Email = o.Email,
                 PaymentMethod = o.PaymentMethod,
                 PaymentStatus = o.PaymentStatus,
                 Status = o.Status,

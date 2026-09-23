@@ -179,10 +179,12 @@ export class LoginComponent implements OnInit {
     this.authService.login(this.loginData).subscribe({
       next: user => {
         this.isLoading = false;
-        if (user.role === 'Admin') {
+        if (this.returnUrl && this.returnUrl !== '/') {
+          this.router.navigateByUrl(this.returnUrl);
+        } else if (user.role === 'Admin') {
           this.router.navigate(['/admin']);
         } else {
-          this.router.navigateByUrl(this.returnUrl);
+          this.router.navigate(['/']);
         }
       },
       error: err => {

@@ -23,6 +23,7 @@ export interface CreateOrderItemRequest {
 export interface CreateOrderRequest {
   customerName: string;
   phoneNumber: string;
+  email?: string;
   shippingAddress: string;
   note?: string;
   paymentMethod: 'COD' | 'BankTransfer';
@@ -46,6 +47,7 @@ export interface OrderList {
   orderCode: string;
   customerName: string;
   phoneNumber: string;
+  email?: string;
   paymentMethod: string;
   paymentStatus: string;
   status: string;

@@ -23,6 +23,9 @@ public class CreateOrderDto
     [Phone]
     public string PhoneNumber { get; set; } = string.Empty;
 
+    [EmailAddress(ErrorMessage = "Email không hợp lệ")]
+    public string? Email { get; set; }
+
     [Required(ErrorMessage = "Vui lòng nhập địa chỉ nhận hàng")]
     public string ShippingAddress { get; set; } = string.Empty;
 
@@ -54,6 +57,7 @@ public class OrderListDto
     public string OrderCode { get; set; } = string.Empty;
     public string CustomerName { get; set; } = string.Empty;
     public string PhoneNumber { get; set; } = string.Empty;
+    public string? Email { get; set; }
     public string PaymentMethod { get; set; } = string.Empty;
     public string PaymentStatus { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;

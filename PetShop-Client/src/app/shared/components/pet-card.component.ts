@@ -22,13 +22,15 @@ import { Pet } from '../../core/models/pet.model';
       </span>
 
       <!-- Image with Native Lazy Loading -->
-      <a [routerLink]="['/pets', pet.id]" class="position-relative overflow-hidden d-block ratio ratio-4x3 bg-light">
-        <img [src]="pet.imageUrl" 
-             [alt]="pet.name" 
-             loading="lazy" 
-             class="card-img-top object-fit-cover w-100 h-100 pet-img"
-             (error)="onImageError($event)">
-        <span class="position-absolute bottom-0 start-0 m-2 badge badge-breed">
+      <a [routerLink]="['/pets', pet.id]" class="position-relative overflow-hidden d-block">
+        <div class="ratio ratio-4x3 bg-light">
+          <img [src]="pet.imageUrl" 
+               [alt]="pet.name" 
+               loading="lazy" 
+               class="card-img-top object-fit-cover w-100 h-100 pet-img"
+               (error)="onImageError($event)">
+        </div>
+        <span class="position-absolute bottom-0 start-0 m-2 badge badge-breed z-1">
           {{ pet.breed }}
         </span>
       </a>

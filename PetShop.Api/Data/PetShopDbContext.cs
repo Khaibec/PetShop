@@ -81,6 +81,7 @@ public class PetShopDbContext : DbContext
             entity.HasIndex(o => o.Status).HasDatabaseName("IX_Orders_Status");
             entity.HasIndex(o => o.CreatedAt).HasDatabaseName("IX_Orders_CreatedAt");
 
+            entity.Property(o => o.Email).HasMaxLength(150);
             entity.Property(o => o.SubTotal).HasPrecision(18, 2);
             entity.Property(o => o.ShippingFee).HasPrecision(18, 2);
             entity.Property(o => o.DiscountAmount).HasPrecision(18, 2);
