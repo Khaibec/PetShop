@@ -1,0 +1,38 @@
+namespace PetShop.Api.DTOs;
+
+public class PagedResult<T>
+{
+    public IEnumerable<T> Items { get; set; } = new List<T>();
+    public int TotalCount { get; set; }
+    public int PageNumber { get; set; }
+    public int PageSize { get; set; }
+    public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
+    public bool HasPreviousPage => PageNumber > 1;
+    public bool HasNextPage => PageNumber < TotalPages;
+
+    public PagedResult() { }
+
+    public PagedResult(IEnumerable<T> items, int totalCount, int pageNumber, int pageSize)
+    {
+        Items = items;
+        TotalCount = totalCount;
+        PageNumber = pageNumber;
+        PageSize = pageSize;
+    }
+}
+
+public class PaginationParams
+{
+    private const int MaxPageSize = 50;
+    public int PageNumber { get; set; } = 1;
+
+    private int _pageSize = 12;
+    public int PageSize
+    {
+        get => _pageSize;
+        set => _pageSize = (value > MaxPageSize) ? MaxPageSize : value;
+    }
+
+    public string? SearchTerm { get; set; }
+    public string? SortBy { get; set; } // "price_asc", "price_desc", "newest", "popular", "name"
+}

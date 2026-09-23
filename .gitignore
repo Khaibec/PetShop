@@ -1,0 +1,22 @@
+## .NET
+bin/
+obj/
+*.user
+*.userosscache
+*.sln.docstates
+.vs/
+_ReSharper*/
+
+## Node / Angular
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+## OS
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
