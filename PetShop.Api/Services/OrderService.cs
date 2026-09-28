@@ -144,8 +144,13 @@ public class OrderService : IOrderService
             .Include(o => o.Items)
             .Where(o => o.Id == id);
 
-        if (!isAdmin && requestingUserId.HasValue)
+        // Security Fix (CRIT-03): Disallow anonymous ID enumeration (IDOR protection)
+        if (!isAdmin)
         {
+            if (!requestingUserId.HasValue)
+            {
+                return null;
+            }
             query = query.Where(o => o.UserId == requestingUserId.Value);
         }
 

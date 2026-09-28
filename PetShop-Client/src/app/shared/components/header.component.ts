@@ -1,3 +1,4 @@
+
 import { Component, OnInit, HostListener } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
@@ -8,209 +9,1327 @@ import { AuthResponse } from '../../core/models/auth.model';
 @Component({
   selector: 'app-header',
   template: `
-    <!-- Top Bar Shopee Style -->
-    <div class="top-bar text-white py-1 small position-relative">
-      <div class="container d-flex justify-content-between align-items-center">
-        <div class="d-flex align-items-center gap-2 gap-md-3">
-          <span><i class="fa-solid fa-phone me-1"></i> Hotline: <strong>1900 8888</strong> (8:00 - 22:00)</span>
-          <span class="d-none d-md-inline text-white-50">|</span>
-          <span class="d-none d-md-inline"><i class="fa-solid fa-truck-fast me-1"></i> Freeship toàn quốc đơn từ 300K</span>
-          <span class="d-none d-lg-inline text-white-50">|</span>
+    <!-- =========================TOP BAR========================== -->
+    <div class="top-bar text-white">
+      <div class="container">
+        <div class="top-bar-content">
 
-          <!-- Order Tracking Search Bar beside Freeship -->
-          <div class="d-none d-md-flex align-items-center tracking-search-box">
-            <div class="input-group input-group-sm">
-              <input type="text" 
-                     [(ngModel)]="orderTrackingCode" 
-                     (keyup.enter)="onTrackOrder()"
-                     class="form-control form-control-sm border-0 py-0 px-2 tracking-input text-dark" 
-                     placeholder="Tra cứu đơn hàng...">
-              <button class="btn btn-sm btn-light text-primary fw-bold px-2 py-0" 
-                      type="button" 
-                      (click)="onTrackOrder()"
-                      title="Tra cứu đơn hàng">
-                <i class="fa-solid fa-magnifying-glass small"></i>
+          <!-- LEFT: Hotline + Freeship -->
+          <div class="top-left">
+            <span class="top-item">
+              <i class="fa-solid fa-phone me-1"></i>
+              Hotline:
+              <strong>1900 8888</strong>
+              <span class="top-time">(8:00 - 22:00)</span>
+            </span>
+
+            <span class="top-divider d-none d-lg-inline">|</span>
+
+            <span class="top-item d-none d-md-inline">
+              <i class="fa-solid fa-truck-fast me-1"></i>
+              Freeship toàn quốc đơn từ 300K
+            </span>
+          </div>
+
+          <!-- CENTER: Order Tracking -->
+          <div class="top-center d-none d-md-flex">
+            <div class="tracking-search">
+              <input
+                type="text"
+                [(ngModel)]="orderTrackingCode"
+                (keyup.enter)="onTrackOrder()"
+                placeholder="Tra cứu đơn hàng..."
+              />
+
+              <button
+                type="button"
+                (click)="onTrackOrder()"
+                title="Tra cứu đơn hàng"
+              >
+                <i class="fa-solid fa-magnifying-glass"></i>
               </button>
             </div>
           </div>
-        </div>
-        <div class="d-flex align-items-center gap-3">
-          <a *ngIf="isAdmin$ | async" routerLink="/admin" class="badge bg-warning text-dark px-2 py-1 text-decoration-none">
-            <i class="fa-solid fa-gauge-high me-1"></i> Quản Trị Admin
-          </a>
 
-          <!-- Mobile Order Tracking Link -->
-          <a routerLink="/orders/tracking" class="d-md-none text-white text-decoration-none small">
-            <i class="fa-solid fa-magnifying-glass me-1"></i> Tra cứu
-          </a>
+          <!-- RIGHT: Admin + Profile -->
+          <div class="top-right">
 
-          <ng-container *ngIf="currentUser$ | async as user; else guestTpl">
-            <div class="dropdown position-relative">
-              <button type="button"
-                      (click)="toggleUserMenu($event)"
-                      class="btn btn-link dropdown-toggle text-white text-decoration-none p-0 d-flex align-items-center gap-1 border-0 shadow-none">
-                <i class="fa-solid fa-circle-user fs-6"></i>
-                <span class="fw-semibold">{{ user.fullName || user.username }}</span>
-              </button>
-              <ul class="dropdown-menu dropdown-menu-end shadow" 
+            <!-- Admin -->
+            <a
+              *ngIf="isAdmin$ | async"
+              routerLink="/admin"
+              class="admin-link d-none d-lg-flex"
+            >
+              <i class="fa-solid fa-gauge-high"></i>
+              <span>Quản trị</span>
+            </a>
+
+            <!-- Mobile tracking -->
+            <a
+              routerLink="/orders/tracking"
+              class="mobile-tracking d-md-none"
+            >
+              <i class="fa-solid fa-magnifying-glass"></i>
+              Tra cứu
+            </a>
+
+            <!-- Logged in -->
+            <ng-container
+              *ngIf="currentUser$ | async as user; else guestTpl"
+            >
+              <div class="user-dropdown">
+
+                <button
+                  type="button"
+                  class="user-button"
+                  (click)="toggleUserMenu($event)"
+                >
+                  <i class="fa-solid fa-circle-user"></i>
+
+                  <span class="user-name">
+                    {{ user.fullName || user.username }}
+                  </span>
+
+                  <i
+                    class="fa-solid fa-chevron-down user-arrow"
+                    [class.rotate]="isUserMenuOpen"
+                  ></i>
+                </button>
+
+                <!-- Dropdown -->
+                <div
+                  class="user-menu"
                   [class.show]="isUserMenuOpen"
-                  style="position: absolute; right: 0; top: 100%; z-index: 1050; min-width: 200px;">
-                <li><span class="dropdown-item-text text-muted small">Quyền: <strong>{{ user.role }}</strong></span></li>
-                <li><hr class="dropdown-divider my-1"></li>
-                <li><a class="dropdown-item py-2" routerLink="/orders/my-orders" (click)="isUserMenuOpen = false"><i class="fa-solid fa-box me-2 text-primary"></i> Đơn hàng của tôi</a></li>
-                <li><a class="dropdown-item py-2" routerLink="/orders/tracking" (click)="isUserMenuOpen = false"><i class="fa-solid fa-magnifying-glass me-2 text-info"></i> Tra cứu đơn hàng</a></li>
-                <li *ngIf="user.role === 'Admin'"><a class="dropdown-item py-2" routerLink="/admin" (click)="isUserMenuOpen = false"><i class="fa-solid fa-gear me-2 text-warning"></i> Trang quản trị Admin</a></li>
-                <li><hr class="dropdown-divider my-1"></li>
-                <li><button class="dropdown-item py-2 text-danger" (click)="onLogout()"><i class="fa-solid fa-arrow-right-from-bracket me-2"></i> Đăng xuất</button></li>
-              </ul>
-            </div>
-          </ng-container>
+                >
+                  <!-- User information -->
+                  <div class="user-menu-header">
+                    <div class="user-avatar">
+                      <i class="fa-solid fa-user"></i>
+                    </div>
 
-          <ng-template #guestTpl>
-            <a routerLink="/auth/login" class="text-white text-decoration-none hover-underline">Đăng nhập</a>
-            <span class="text-white-50">|</span>
-            <a routerLink="/auth/register" class="text-white text-decoration-none hover-underline">Đăng ký</a>
-          </ng-template>
+                    <div class="user-info">
+                      <strong>
+                        {{ user.fullName || user.username }}
+                      </strong>
+
+                      <span>
+                        <i class="fa-solid fa-shield-halved"></i>
+                        {{ user.role }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="menu-divider"></div>
+
+                  <!-- Orders -->
+                  <a
+                    class="user-menu-item"
+                    routerLink="/orders/my-orders"
+                    (click)="isUserMenuOpen = false"
+                  >
+                    <span class="menu-icon blue">
+                      <i class="fa-solid fa-box"></i>
+                    </span>
+
+                    <span>Đơn hàng của tôi</span>
+
+                    <i class="fa-solid fa-chevron-right menu-arrow"></i>
+                  </a>
+
+                  <!-- Tracking -->
+                  <a
+                    class="user-menu-item"
+                    routerLink="/orders/tracking"
+                    (click)="isUserMenuOpen = false"
+                  >
+                    <span class="menu-icon cyan">
+                      <i class="fa-solid fa-magnifying-glass"></i>
+                    </span>
+
+                    <span>Tra cứu đơn hàng</span>
+
+                    <i class="fa-solid fa-chevron-right menu-arrow"></i>
+                  </a>
+
+                  <!-- Admin -->
+                  <a
+                    *ngIf="user.role === 'Admin'"
+                    class="user-menu-item"
+                    routerLink="/admin"
+                    (click)="isUserMenuOpen = false"
+                  >
+                    <span class="menu-icon orange">
+                      <i class="fa-solid fa-gauge-high"></i>
+                    </span>
+
+                    <span>Trang quản trị</span>
+
+                    <i class="fa-solid fa-chevron-right menu-arrow"></i>
+                  </a>
+
+                  <div class="menu-divider"></div>
+
+                  <!-- Logout -->
+                  <button
+                    type="button"
+                    class="user-menu-item logout-item"
+                    (click)="onLogout()"
+                  >
+                    <span class="menu-icon red">
+                      <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    </span>
+
+                    <span>Đăng xuất</span>
+                  </button>
+                </div>
+              </div>
+            </ng-container>
+
+            <!-- Guest -->
+            <ng-template #guestTpl>
+              <div class="guest-actions">
+                <a
+                  routerLink="/auth/login"
+                  class="guest-link"
+                >
+                  Đăng nhập
+                </a>
+
+                <span class="guest-divider">|</span>
+
+                <a
+                  routerLink="/auth/register"
+                  class="guest-link"
+                >
+                  Đăng ký
+                </a>
+              </div>
+            </ng-template>
+
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Main Header -->
-    <header class="main-header shadow-sm bg-white sticky-top">
-      <div class="container py-2 py-md-3">
-        <div class="row align-items-center g-2 g-md-4">
-          <!-- Logo -->
-          <div class="col-6 col-md-3">
-            <a routerLink="/" class="d-flex align-items-center text-decoration-none">
-              <div class="logo-icon bg-gradient-brand text-white rounded-circle d-flex align-items-center justify-content-center me-2 me-md-3">
-                <i class="fa-solid fa-paw fs-4"></i>
+    <!-- =========================
+         MAIN HEADER
+    ========================== -->
+    <header class="main-header bg-white sticky-top shadow-sm">
+
+      <div class="container main-header-container">
+
+        <div class="main-header-content">
+
+          <!-- LOGO -->
+          <div class="logo-section">
+            <a
+              routerLink="/"
+              class="logo-link"
+            >
+              <div class="logo-icon">
+                <i class="fa-solid fa-paw"></i>
               </div>
-              <div>
-                <span class="brand-title brand-font fs-3 fw-bold text-dark lh-1 d-block">PetShop<span class="text-brand">.vn</span></span>
-                <small class="text-muted text-uppercase fw-semibold letter-spacing d-none d-sm-block">Thiên đường cưng nựng</small>
+
+              <div class="logo-text">
+                <span class="brand-title">
+                  PetShop<span class="text-brand">.vn</span>
+                </span>
+
+                <small>
+                  Thiên đường cưng nựng
+                </small>
               </div>
             </a>
           </div>
 
-          <!-- Search Bar -->
-          <div class="col-12 col-md-6 order-3 order-md-2">
-            <form (ngSubmit)="onSearch()" class="position-relative">
-              <div class="input-group search-box shadow-sm rounded-pill overflow-hidden border">
-                <input type="text" 
-                       [(ngModel)]="searchKeyword" 
-                       name="keyword"
-                       class="form-control border-0 ps-3 ps-md-4 shadow-none py-2" 
-                       placeholder="Tìm giống chó, mèo, hạt Royal Canin, thức ăn, phụ kiện...">
-                <button class="btn btn-brand px-4 text-white" type="submit">
-                  <i class="fa-solid fa-magnifying-glass me-1"></i> <span class="d-none d-sm-inline">Tìm kiếm</span>
+          <!-- SEARCH -->
+          <div class="search-section">
+
+            <form
+              (ngSubmit)="onSearch()"
+              class="search-form"
+            >
+              <div class="search-box">
+
+                <input
+                  type="text"
+                  [(ngModel)]="searchKeyword"
+                  name="keyword"
+                  placeholder="Tìm giống chó, mèo, thức ăn, phụ kiện..."
+                />
+
+                <button
+                  type="submit"
+                  class="search-button"
+                >
+                  <i class="fa-solid fa-magnifying-glass"></i>
+
+                  <span class="d-none d-sm-inline">
+                    Tìm kiếm
+                  </span>
                 </button>
+
               </div>
-              <!-- Hot keywords -->
-              <div class="hot-keywords mt-1 small d-none d-md-flex gap-2 text-muted ps-3">
-                <span>Gợi ý:</span>
-                <a href="javascript:void(0)" (click)="quickSearch('Corgi')" class="text-muted hover-brand">Corgi</a>
-                <a href="javascript:void(0)" (click)="quickSearch('Poodle')" class="text-muted hover-brand">Poodle</a>
-                <a href="javascript:void(0)" (click)="quickSearch('Aln')" class="text-muted hover-brand">Mèo Aln</a>
-                <a href="javascript:void(0)" (click)="quickSearch('Royal Canin')" class="text-muted hover-brand">Royal Canin</a>
-                <a href="javascript:void(0)" (click)="quickSearch('Whiskas')" class="text-muted hover-brand">Whiskas</a>
+
+              <!-- HOT KEYWORDS -->
+              <div class="hot-keywords">
+
+                <span class="suggest-label">
+                  <i class="fa-solid fa-fire"></i>
+                  Gợi ý:
+                </span>
+
+                <button
+                  type="button"
+                  class="keyword-chip"
+                  (click)="quickSearch('Corgi')"
+                >
+                  Corgi
+                </button>
+
+                <button
+                  type="button"
+                  class="keyword-chip"
+                  (click)="quickSearch('Poodle')"
+                >
+                  Poodle
+                </button>
+
+                <button
+                  type="button"
+                  class="keyword-chip"
+                  (click)="quickSearch('Mèo ALN')"
+                >
+                  Mèo ALN
+                </button>
+
+                <button
+                  type="button"
+                  class="keyword-chip"
+                  (click)="quickSearch('Royal Canin')"
+                >
+                  Royal Canin
+                </button>
+
+                <button
+                  type="button"
+                  class="keyword-chip"
+                  (click)="quickSearch('Whiskas')"
+                >
+                  Whiskas
+                </button>
+
               </div>
             </form>
+
           </div>
 
-          <!-- Cart & Actions -->
-          <div class="col-6 col-md-3 order-2 order-md-3 text-end">
-            <a routerLink="/cart" class="btn btn-cart position-relative d-inline-flex align-items-center px-3 py-2 rounded-pill shadow-sm">
-              <i class="fa-solid fa-cart-shopping fs-5 text-brand me-2"></i>
-              <span class="d-none d-lg-inline fw-semibold text-dark">Giỏ hàng</span>
-              <span *ngIf="(cartCount$ | async) as count" 
-                    class="badge bg-danger rounded-pill ms-2 animate-bounce">
-                {{ count }}
+          <!-- CART -->
+          <div class="cart-section">
+
+            <a
+              routerLink="/cart"
+              class="cart-button"
+            >
+              <div class="cart-icon-wrapper">
+                <i class="fa-solid fa-cart-shopping"></i>
+
+                <span
+                  *ngIf="cartCount$ | async as count"
+                  class="cart-badge"
+                >
+                  {{ count }}
+                </span>
+              </div>
+
+              <span class="cart-text">
+                Giỏ hàng
               </span>
             </a>
+
           </div>
+
         </div>
+
       </div>
 
-      <!-- Navigation Tabs (TAB 1: THÚ CƯNG | TAB 2: ĐỒ DÙNG THÚ CƯNG) -->
+      <!-- NAVIGATION -->
       <app-navbar></app-navbar>
+
     </header>
   `,
-  styles: [`
-    .top-bar {
-      background: linear-gradient(90deg, #ff5722 0%, #ff7a00 100%);
-      position: relative;
-      z-index: 1030;
-    }
-    .tracking-search-box {
-      max-width: 230px;
-    }
-    .tracking-input {
-      border-radius: 20px 0 0 20px !important;
-      font-size: 0.75rem;
-      height: 26px;
-    }
-    .tracking-input:focus {
-      outline: none;
-      box-shadow: none;
-    }
-    .tracking-search-box .btn {
-      border-radius: 0 20px 20px 0 !important;
-      height: 26px;
-      font-size: 0.75rem;
-    }
-    .text-brand {
-      color: #ff5722;
-    }
-    .bg-gradient-brand {
-      background: linear-gradient(135deg, #ff5722 0%, #ff9800 100%);
-      width: 44px;
-      height: 44px;
-    }
-    .btn-brand {
-      background-color: #ff5722;
-      border: none;
-      &:hover {
-        background-color: #e64a19;
+
+  styles: [
+    `
+      /* =====================================================
+         TOP BAR
+      ===================================================== */
+
+      .top-bar {
+        background: linear-gradient(
+          90deg,
+          #ff5722 0%,
+          #ff6f32 50%,
+          #ff9800 100%
+        );
+
+        position: relative;
+        z-index: 1040;
+        min-height: 36px;
       }
-    }
-    .btn-cart {
-      background-color: #fff4f0;
-      border: 1px solid #ffd8cc;
-      &:hover {
-        background-color: #ffe8e0;
+
+      .top-bar-content {
+        min-height: 36px;
+
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+
+        align-items: center;
+        column-gap: 20px;
       }
-    }
-    .hover-brand:hover {
-      color: #ff5722 !important;
-    }
-    .letter-spacing {
-      letter-spacing: 1px;
-      font-size: 0.65rem;
-    }
-    .search-box {
-      border-color: #ffbba7 !important;
-    }
-    .animate-bounce {
-      animation: bounce 1s infinite alternate;
-    }
-    @keyframes bounce {
-      from { transform: translateY(0); }
-      to { transform: translateY(-3px); }
-    }
-  `]
+
+      /* LEFT */
+
+      .top-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        min-width: 0;
+      }
+
+      .top-item {
+        white-space: nowrap;
+        font-size: 12px;
+      }
+
+      .top-item i {
+        font-size: 11px;
+      }
+
+      .top-time {
+        opacity: 0.8;
+      }
+
+      .top-divider {
+        opacity: 0.45;
+        font-size: 12px;
+      }
+
+      /* CENTER */
+
+      .top-center {
+        justify-content: center;
+      }
+
+      .tracking-search {
+        width: 230px;
+        height: 27px;
+
+        display: flex;
+        align-items: center;
+
+        background: rgba(255, 255, 255, 0.98);
+        border-radius: 20px;
+        overflow: hidden;
+
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+      }
+
+      .tracking-search input {
+        flex: 1;
+
+        width: 100%;
+        height: 100%;
+
+        border: none;
+        outline: none;
+
+        padding: 0 10px;
+
+        color: #333;
+        font-size: 11px;
+
+        background: transparent;
+      }
+
+      .tracking-search input::placeholder {
+        color: #999;
+      }
+
+      .tracking-search button {
+        width: 34px;
+        height: 100%;
+
+        border: none;
+        background: transparent;
+
+        color: #ff5722;
+
+        cursor: pointer;
+
+        transition: all 0.2s ease;
+      }
+
+      .tracking-search button:hover {
+        background: #fff1ec;
+        color: #e64a19;
+      }
+
+      /* RIGHT */
+
+      .top-right {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+
+        gap: 16px;
+
+        min-width: 0;
+      }
+
+      .admin-link,
+      .mobile-tracking {
+        color: white;
+        text-decoration: none;
+
+        font-size: 12px;
+        font-weight: 600;
+
+        align-items: center;
+        gap: 5px;
+
+        transition: opacity 0.2s ease;
+      }
+
+      .admin-link:hover,
+      .mobile-tracking:hover {
+        color: white;
+        opacity: 0.8;
+      }
+
+      /* USER */
+
+      .user-dropdown {
+        position: relative;
+      }
+
+      .user-button {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+
+        border: none;
+        outline: none;
+        background: transparent;
+
+        color: white;
+
+        padding: 5px 0;
+
+        cursor: pointer;
+
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .user-button:hover {
+        color: white;
+        opacity: 0.9;
+      }
+
+      .user-button > i:first-child {
+        font-size: 19px;
+      }
+
+      .user-name {
+        max-width: 140px;
+
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .user-arrow {
+        font-size: 9px;
+
+        transition: transform 0.2s ease;
+      }
+
+      .user-arrow.rotate {
+        transform: rotate(180deg);
+      }
+
+      /* USER MENU */
+
+      .user-menu {
+        position: absolute;
+
+        top: calc(100% + 8px);
+        right: 0;
+
+        width: 265px;
+
+        background: white;
+
+        border-radius: 12px;
+
+        box-shadow:
+          0 10px 30px rgba(0, 0, 0, 0.15),
+          0 3px 10px rgba(0, 0, 0, 0.08);
+
+        overflow: hidden;
+
+        opacity: 0;
+        visibility: hidden;
+
+        transform: translateY(-5px);
+
+        transition:
+          opacity 0.2s ease,
+          transform 0.2s ease,
+          visibility 0.2s ease;
+
+        z-index: 1050;
+      }
+
+      .user-menu.show {
+        opacity: 1;
+        visibility: visible;
+
+        transform: translateY(0);
+      }
+
+      .user-menu-header {
+        display: flex;
+        align-items: center;
+
+        gap: 12px;
+
+        padding: 15px;
+      }
+
+      .user-avatar {
+        width: 42px;
+        height: 42px;
+
+        flex-shrink: 0;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        border-radius: 50%;
+
+        background: linear-gradient(
+          135deg,
+          #ff5722,
+          #ff9800
+        );
+
+        color: white;
+
+        font-size: 18px;
+      }
+
+      .user-info {
+        min-width: 0;
+
+        display: flex;
+        flex-direction: column;
+
+        gap: 4px;
+      }
+
+      .user-info strong {
+        color: #333;
+
+        font-size: 14px;
+
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .user-info span {
+        color: #999;
+
+        font-size: 11px;
+      }
+
+      .user-info span i {
+        color: #ff5722;
+        margin-right: 3px;
+      }
+
+      .menu-divider {
+        height: 1px;
+        background: #f0f0f0;
+      }
+
+      .user-menu-item {
+        width: 100%;
+
+        display: flex;
+        align-items: center;
+
+        gap: 10px;
+
+        padding: 10px 14px;
+
+        border: none;
+        background: white;
+
+        color: #444;
+
+        text-decoration: none;
+
+        font-size: 13px;
+
+        cursor: pointer;
+
+        text-align: left;
+
+        transition:
+          background 0.2s ease,
+          color 0.2s ease;
+      }
+
+      .user-menu-item:hover {
+        background: #fff7f3;
+        color: #ff5722;
+      }
+
+      .menu-icon {
+        width: 30px;
+        height: 30px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        border-radius: 8px;
+
+        font-size: 13px;
+      }
+
+      .menu-icon.blue {
+        background: #edf4ff;
+        color: #4285f4;
+      }
+
+      .menu-icon.cyan {
+        background: #eafaff;
+        color: #00a6c7;
+      }
+
+      .menu-icon.orange {
+        background: #fff3e8;
+        color: #ff9800;
+      }
+
+      .menu-icon.red {
+        background: #fff0f0;
+        color: #dc3545;
+      }
+
+      .menu-arrow {
+        margin-left: auto;
+
+        font-size: 9px;
+        color: #bbb;
+      }
+
+      .logout-item {
+        color: #dc3545;
+      }
+
+      .logout-item:hover {
+        color: #dc3545;
+        background: #fff5f5;
+      }
+
+      /* GUEST */
+
+      .guest-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .guest-link {
+        color: white;
+
+        text-decoration: none;
+
+        font-size: 12px;
+        font-weight: 600;
+
+        transition: opacity 0.2s ease;
+      }
+
+      .guest-link:hover {
+        color: white;
+        opacity: 0.8;
+      }
+
+      .guest-divider {
+        opacity: 0.5;
+      }
+
+
+      /* =====================================================
+         MAIN HEADER
+      ===================================================== */
+
+      .main-header {
+        z-index: 1030;
+      }
+
+      .main-header-container {
+        padding-top: 12px;
+        padding-bottom: 8px;
+      }
+
+      .main-header-content {
+        display: grid;
+
+        grid-template-columns: 250px minmax(350px, 1fr) 150px;
+
+        align-items: center;
+
+        column-gap: 35px;
+      }
+
+      /* LOGO */
+
+      .logo-link {
+        display: inline-flex;
+        align-items: center;
+
+        text-decoration: none;
+
+        color: #222;
+      }
+
+      .logo-icon {
+        width: 46px;
+        height: 46px;
+
+        flex-shrink: 0;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        border-radius: 50%;
+
+        background: linear-gradient(
+          135deg,
+          #ff5722 0%,
+          #ff9800 100%
+        );
+
+        color: white;
+
+        font-size: 22px;
+
+        box-shadow: 0 4px 10px rgba(255, 87, 34, 0.22);
+
+        margin-right: 10px;
+      }
+
+      .logo-text {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .brand-title {
+        color: #222;
+
+        font-family: Arial, sans-serif;
+
+        font-size: 25px;
+        font-weight: 800;
+
+        line-height: 1;
+      }
+
+      .text-brand {
+        color: #ff5722;
+      }
+
+      .logo-text small {
+        margin-top: 5px;
+
+        color: #888;
+
+        font-size: 8px;
+        font-weight: 700;
+
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+
+
+      /* =====================================================
+         SEARCH
+      ===================================================== */
+
+      .search-section {
+        width: 100%;
+      }
+
+      .search-form {
+        width: 100%;
+      }
+
+      .search-box {
+        display: flex;
+        align-items: center;
+
+        width: 100%;
+        height: 43px;
+
+        overflow: hidden;
+
+        border: 2px solid #ffbba7;
+        border-radius: 24px;
+
+        background: white;
+
+        box-shadow: 0 2px 8px rgba(255, 87, 34, 0.08);
+
+        transition:
+          border-color 0.2s ease,
+          box-shadow 0.2s ease;
+      }
+
+      .search-box:focus-within {
+        border-color: #ff5722;
+
+        box-shadow:
+          0 3px 12px rgba(255, 87, 34, 0.15);
+      }
+
+      .search-box input {
+        flex: 1;
+
+        min-width: 0;
+
+        height: 100%;
+
+        border: none;
+        outline: none;
+
+        padding: 0 16px;
+
+        color: #333;
+
+        font-size: 13px;
+      }
+
+      .search-box input::placeholder {
+        color: #aaa;
+      }
+
+      .search-button {
+        height: 35px;
+
+        margin-right: 3px;
+
+        padding: 0 18px;
+
+        border: none;
+        border-radius: 20px;
+
+        background: #ff5722;
+
+        color: white;
+
+        font-size: 13px;
+        font-weight: 600;
+
+        cursor: pointer;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        gap: 6px;
+
+        transition: background 0.2s ease;
+      }
+
+      .search-button:hover {
+        background: #e64a19;
+      }
+
+
+      /* =====================================================
+         HOT KEYWORDS
+      ===================================================== */
+
+      .hot-keywords {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+
+        gap: 6px;
+
+        margin-top: 7px;
+        padding-left: 8px;
+      }
+
+      .suggest-label {
+        display: flex;
+        align-items: center;
+
+        gap: 4px;
+
+        margin-right: 2px;
+
+        color: #777;
+
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .suggest-label i {
+        color: #ff5722;
+        font-size: 10px;
+      }
+
+      .keyword-chip {
+        border: 1px solid #f2d7cf;
+
+        border-radius: 12px;
+
+        background: #fff8f5;
+
+        color: #777;
+
+        padding: 2px 9px;
+
+        font-size: 10px;
+
+        cursor: pointer;
+
+        transition:
+          color 0.2s ease,
+          background 0.2s ease,
+          border-color 0.2s ease,
+          transform 0.2s ease;
+      }
+
+      .keyword-chip:hover {
+        border-color: #ffb39e;
+
+        background: #fff0eb;
+
+        color: #ff5722;
+
+        transform: translateY(-1px);
+      }
+
+
+      /* =====================================================
+         CART
+      ===================================================== */
+
+      .cart-section {
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .cart-button {
+        display: inline-flex;
+        align-items: center;
+
+        gap: 9px;
+
+        padding: 8px 13px;
+
+        border: 1px solid #ffd8cc;
+        border-radius: 22px;
+
+        background: #fff7f4;
+
+        color: #333;
+
+        text-decoration: none;
+
+        transition:
+          background 0.2s ease,
+          border-color 0.2s ease,
+          transform 0.2s ease;
+      }
+
+      .cart-button:hover {
+        border-color: #ffb39e;
+
+        background: #fff0eb;
+
+        transform: translateY(-1px);
+      }
+
+      .cart-icon-wrapper {
+        position: relative;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        color: #ff5722;
+
+        font-size: 20px;
+      }
+
+      .cart-badge {
+        position: absolute;
+
+        top: -9px;
+        right: -10px;
+
+        min-width: 17px;
+        height: 17px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        padding: 0 4px;
+
+        border-radius: 10px;
+
+        background: #dc3545;
+
+        color: white;
+
+        font-size: 9px;
+        font-weight: 700;
+
+        border: 2px solid white;
+      }
+
+      .cart-text {
+        color: #333;
+
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+
+      /* =====================================================
+         RESPONSIVE
+      ===================================================== */
+
+      @media (max-width: 1199px) {
+
+        .main-header-content {
+          grid-template-columns: 210px minmax(300px, 1fr) 125px;
+
+          column-gap: 20px;
+        }
+
+        .brand-title {
+          font-size: 22px;
+        }
+
+        .logo-icon {
+          width: 42px;
+          height: 42px;
+
+          font-size: 20px;
+        }
+
+        .user-name {
+          max-width: 100px;
+        }
+
+      }
+
+
+      @media (max-width: 991px) {
+
+        .top-bar-content {
+          grid-template-columns: 1fr auto;
+        }
+
+        .top-center {
+          display: none !important;
+        }
+
+        .main-header-content {
+          grid-template-columns: 200px 1fr 110px;
+
+          column-gap: 15px;
+        }
+
+        .cart-text {
+          display: none;
+        }
+
+        .cart-button {
+          padding: 8px 12px;
+        }
+
+        .hot-keywords {
+          display: none;
+        }
+
+      }
+
+
+      @media (max-width: 767px) {
+
+        .top-bar {
+          min-height: 32px;
+        }
+
+        .top-bar-content {
+          min-height: 32px;
+
+          display: flex;
+          justify-content: space-between;
+
+          column-gap: 10px;
+        }
+
+        .top-left {
+          flex: 1;
+        }
+
+        .top-item {
+          font-size: 10px;
+        }
+
+        .top-time {
+          display: none;
+        }
+
+        .top-right {
+          gap: 8px;
+        }
+
+        .user-name {
+          display: none;
+        }
+
+        .user-button > i:first-child {
+          font-size: 18px;
+        }
+
+        .guest-link {
+          font-size: 10px;
+        }
+
+        .main-header-container {
+          padding-top: 10px;
+          padding-bottom: 10px;
+        }
+
+        .main-header-content {
+          display: grid;
+
+          grid-template-columns: 1fr auto;
+
+          grid-template-areas:
+            "logo cart"
+            "search search";
+
+          row-gap: 12px;
+        }
+
+        .logo-section {
+          grid-area: logo;
+        }
+
+        .cart-section {
+          grid-area: cart;
+        }
+
+        .search-section {
+          grid-area: search;
+        }
+
+        .brand-title {
+          font-size: 21px;
+        }
+
+        .logo-icon {
+          width: 40px;
+          height: 40px;
+
+          font-size: 18px;
+        }
+
+        .logo-text small {
+          font-size: 7px;
+        }
+
+        .search-box {
+          height: 42px;
+        }
+
+        .search-button {
+          padding: 0 14px;
+        }
+
+      }
+
+
+      @media (max-width: 400px) {
+
+        .top-item {
+          font-size: 9px;
+        }
+
+        .logo-icon {
+          width: 36px;
+          height: 36px;
+
+          font-size: 16px;
+
+          margin-right: 7px;
+        }
+
+        .brand-title {
+          font-size: 18px;
+        }
+
+        .logo-text small {
+          display: none;
+        }
+
+        .search-box input {
+          padding: 0 12px;
+
+          font-size: 12px;
+        }
+
+        .search-button {
+          padding: 0 12px;
+        }
+
+      }
+    `,
+  ],
 })
 export class HeaderComponent implements OnInit {
   currentUser$: Observable<AuthResponse | null>;
   isAdmin$: Observable<boolean>;
   cartCount$: Observable<number>;
+
   searchKeyword: string = '';
   orderTrackingCode: string = '';
+
   isUserMenuOpen: boolean = false;
 
   constructor(
     private authService: AuthService,
     private cartService: CartService,
-    private router: Router
+    private router: Router,
   ) {
     this.currentUser$ = this.authService.currentUser$;
     this.isAdmin$ = this.authService.isAdmin$;
@@ -219,39 +1338,80 @@ export class HeaderComponent implements OnInit {
 
   ngOnInit(): void {}
 
+  /**
+   * Toggle user dropdown
+   */
   toggleUserMenu(event: MouseEvent): void {
     event.stopPropagation();
+
     this.isUserMenuOpen = !this.isUserMenuOpen;
   }
 
+  /**
+   * Close dropdown when clicking outside
+   */
   @HostListener('document:click')
   onDocumentClick(): void {
     this.isUserMenuOpen = false;
   }
 
+  /**
+   * Track order
+   */
   onTrackOrder(): void {
     if (!this.orderTrackingCode || !this.orderTrackingCode.trim()) {
       this.router.navigate(['/orders/tracking']);
       return;
     }
-    this.router.navigate(['/orders/tracking'], { queryParams: { code: this.orderTrackingCode.trim() } });
+
+    this.router.navigate(['/orders/tracking'], {
+      queryParams: {
+        code: this.orderTrackingCode.trim(),
+      },
+    });
+
     this.orderTrackingCode = '';
   }
 
+  /**
+   * Search products
+   */
   onSearch(): void {
-    if (!this.searchKeyword.trim()) return;
-    // Tìm kiếm điều hướng sang /products hoặc /pets theo ngữ cảnh
-    this.router.navigate(['/products'], { queryParams: { q: this.searchKeyword.trim() } });
+    if (!this.searchKeyword.trim()) {
+      return;
+    }
+
+    // Both listing pages support `q`. Keep the search in the current main tab
+    // so a search from /pets does not make the /products navbar tab active.
+    const currentPath = this.router.url.split('?')[0];
+    const searchRoute = currentPath === '/pets' || currentPath.startsWith('/pets/')
+      ? '/pets'
+      : '/products';
+
+    this.router.navigate([searchRoute], {
+      queryParams: {
+        q: this.searchKeyword.trim(),
+      },
+    });
   }
 
+  /**
+   * Quick search from suggestion
+   */
   quickSearch(keyword: string): void {
     this.searchKeyword = keyword;
+
     this.onSearch();
   }
 
+  /**
+   * Logout
+   */
   onLogout(): void {
     this.isUserMenuOpen = false;
+
     this.authService.logout();
+
     this.router.navigate(['/']);
   }
 }

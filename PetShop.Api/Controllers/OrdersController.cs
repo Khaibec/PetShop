@@ -61,6 +61,7 @@ public class OrdersController : ControllerBase
         return Ok(orders);
     }
 
+    [Authorize]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
