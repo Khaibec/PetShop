@@ -26,20 +26,14 @@ import { CartItem, CreateOrderRequest, OrderDetail } from '../../core/models/ord
         <h3 class="fw-bold text-dark mb-2">🎉 Đặt Hàng Thành Công!</h3>
         <p class="text-muted mb-4">Cảm ơn bạn đã tin tưởng PetShop. Đơn hàng của bạn đã được tiếp nhận và nhân viên sẽ xử lý ngay.</p>
 
-        <!-- Simulated Notification Notice (Email & SMS Dispatch) -->
+        <!-- Account Linked Notice -->
         <div class="alert alert-success border-success-subtle rounded-4 mx-auto text-start mb-4 p-3 p-md-4 shadow-sm" style="max-width: 600px;">
           <div class="d-flex align-items-start gap-3">
-            <i class="fa-solid fa-envelope-circle-check text-success fs-3 mt-1"></i>
+            <i class="fa-solid fa-box-open text-success fs-3 mt-1"></i>
             <div>
-              <strong class="d-block text-dark mb-1">Xác nhận đơn hàng đã được gửi:</strong>
-              <div class="small text-muted mb-2">
-                Thông tin đơn hàng cùng <strong>Mã Tra Cứu</strong> đã được gửi tự động đến Email: 
-                <span class="badge bg-light text-primary border">{{ createdOrder?.email || formData.email }}</span> 
-                và SĐT: <span class="badge bg-light text-dark border">{{ createdOrder?.phoneNumber }}</span> (hệ thống mô phỏng).
-              </div>
-              <div class="small bg-white p-2 rounded border text-muted">
-                <i class="fa-solid fa-circle-info text-info me-1"></i> 
-                Quý khách có thể sử dụng mã đơn hàng <strong>{{ createdOrder?.orderCode }}</strong> để tra cứu tiến độ vận chuyển bất kỳ lúc nào tại thanh tra cứu hoặc nút bên dưới.
+              <strong class="d-block text-dark mb-1">Đơn hàng đã được lưu vào tài khoản:</strong>
+              <div class="small text-muted mb-0">
+                Đơn hàng mã <strong>{{ createdOrder?.orderCode }}</strong> đã được liên kết với tài khoản của bạn. Bạn có thể theo dõi tiến độ xử lý và giao hàng bất kỳ lúc nào trong mục <strong>Đơn Hàng Của Tôi</strong>.
               </div>
             </div>
           </div>
@@ -90,10 +84,7 @@ import { CartItem, CreateOrderRequest, OrderDetail } from '../../core/models/ord
 
         <!-- Action Buttons -->
         <div class="d-flex flex-wrap justify-content-center gap-3">
-          <a [routerLink]="['/orders/tracking']" [queryParams]="{ code: createdOrder?.orderCode }" class="btn btn-warning rounded-pill px-4 fw-bold shadow-sm">
-            <i class="fa-solid fa-magnifying-glass me-1"></i> Tra Cứu Tiến Độ Đơn Này
-          </a>
-          <a *ngIf="isLoggedIn" routerLink="/orders/my-orders" class="btn btn-outline-danger rounded-pill px-4 fw-bold">
+          <a routerLink="/orders/my-orders" class="btn btn-outline-danger rounded-pill px-4 fw-bold">
             <i class="fa-solid fa-box me-1"></i> Xem Đơn Hàng Của Tôi
           </a>
           <a routerLink="/" class="btn btn-danger rounded-pill px-4 fw-bold">
@@ -106,28 +97,6 @@ import { CartItem, CreateOrderRequest, OrderDetail } from '../../core/models/ord
       <div *ngIf="!orderSuccess" class="row g-4">
         <!-- Form Details (Left) -->
         <div class="col-12 col-lg-7">
-          <!-- GUEST CHOICES BANNER (If not logged in) -->
-          <div *ngIf="!isLoggedIn" class="card border-primary border-opacity-25 bg-primary-subtle bg-opacity-10 rounded-4 p-3 p-md-4 mb-4 shadow-sm">
-            <div class="row align-items-center g-3">
-              <div class="col-12 col-md-7">
-                <h6 class="fw-bold text-dark mb-1">
-                  <i class="fa-solid fa-user-shield text-primary me-2"></i> Bạn chưa đăng nhập tài khoản?
-                </h6>
-                <p class="text-muted small mb-0">
-                  Bạn có thể đăng nhập để lưu lịch sử đơn hàng, hoặc tiếp tục thanh toán nhanh với tư cách Khách vãng lai.
-                </p>
-              </div>
-              <div class="col-12 col-md-5 d-flex flex-wrap gap-2 justify-content-md-end">
-                <button type="button" (click)="goToLogin()" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-semibold shadow-sm">
-                  <i class="fa-solid fa-arrow-right-to-bracket me-1"></i> Đăng nhập / Đăng ký
-                </button>
-                <button type="button" (click)="focusGuestForm()" class="btn btn-primary btn-sm rounded-pill px-3 fw-semibold shadow-sm">
-                  <i class="fa-solid fa-bolt me-1"></i> Đặt hàng ngay (Guest)
-                </button>
-              </div>
-            </div>
-          </div>
-
           <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
             <h5 class="fw-bold mb-3 pb-2 border-bottom text-dark">
               <i class="fa-solid fa-location-dot text-danger me-2"></i> 1. Thông Tin Nhận Hàng
@@ -304,6 +273,12 @@ export class CheckoutComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    const currentUser = this.authService.currentUserValue;
+    if (!currentUser) {
+      this.router.navigate(['/auth/login'], { queryParams: { returnUrl: '/checkout' } });
+      return;
+    }
+
     this.cartService.items$.subscribe(items => {
       this.items = items;
       if (items.length === 0 && !this.orderSuccess) {
@@ -311,11 +286,13 @@ export class CheckoutComponent implements OnInit {
       }
     });
 
-    // Auto-fill if user logged in
-    const currentUser = this.authService.currentUserValue;
-    if (currentUser) {
-      this.formData.customerName = currentUser.fullName || currentUser.username;
-      this.formData.email = currentUser.email || '';
+    this.formData.customerName = currentUser.fullName || currentUser.username;
+    this.formData.email = currentUser.email || '';
+    if ((currentUser as any).phoneNumber) {
+      this.formData.phoneNumber = (currentUser as any).phoneNumber;
+    }
+    if ((currentUser as any).address) {
+      this.formData.shippingAddress = (currentUser as any).address;
     }
   }
 
@@ -325,18 +302,6 @@ export class CheckoutComponent implements OnInit {
 
   get totalAmount(): number {
     return this.subTotal + this.shippingFee;
-  }
-
-  goToLogin(): void {
-    this.router.navigate(['/auth/login'], { queryParams: { returnUrl: '/checkout' } });
-  }
-
-  focusGuestForm(): void {
-    const el = document.getElementById('customerNameInput');
-    if (el) {
-      el.focus();
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
   }
 
   copyOrderCode(): void {

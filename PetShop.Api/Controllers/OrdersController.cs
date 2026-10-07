@@ -17,6 +17,7 @@ public class OrdersController : ControllerBase
         _orderService = orderService;
     }
 
+    [Authorize]
     [HttpPost]
     public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto dto)
     {
@@ -25,11 +26,10 @@ public class OrdersController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        int? userId = null;
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (!string.IsNullOrEmpty(userIdClaim) && int.TryParse(userIdClaim, out int parsedId))
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
         {
-            userId = parsedId;
+            return Unauthorized(new { message = "Vui lòng đăng nhập để tiến hành đặt hàng." });
         }
 
         try
@@ -78,24 +78,6 @@ public class OrdersController : ControllerBase
         if (order == null)
         {
             return NotFound(new { message = $"Không tìm thấy đơn hàng mã {id}" });
-        }
-
-        return Ok(order);
-    }
-
-    [AllowAnonymous]
-    [HttpGet("track/{code}")]
-    public async Task<IActionResult> TrackOrderByCode(string code)
-    {
-        if (string.IsNullOrWhiteSpace(code))
-        {
-            return BadRequest(new { message = "Vui lòng nhập mã đơn hàng" });
-        }
-
-        var order = await _orderService.GetOrderByCodeAsync(code);
-        if (order == null)
-        {
-            return NotFound(new { message = $"Không tìm thấy thông tin đơn hàng với mã '{code.Trim()}'" });
         }
 
         return Ok(order);

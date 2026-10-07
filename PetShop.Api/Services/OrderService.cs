@@ -8,9 +8,8 @@ namespace PetShop.Api.Services;
 
 public interface IOrderService
 {
-    Task<OrderDetailDto> CreateOrderAsync(CreateOrderDto dto, int? userId = null);
+    Task<OrderDetailDto> CreateOrderAsync(CreateOrderDto dto, int userId);
     Task<OrderDetailDto?> GetOrderByIdAsync(int id, int? requestingUserId = null, bool isAdmin = false);
-    Task<OrderDetailDto?> GetOrderByCodeAsync(string orderCode);
     Task<IEnumerable<OrderListDto>> GetUserOrdersAsync(int userId);
     Task<PagedResult<OrderListDto>> GetAllOrdersAsync(PaginationParams pagination, string? status = null);
     Task<OrderDetailDto?> UpdateOrderStatusAsync(int id, UpdateOrderStatusDto dto);
@@ -26,7 +25,7 @@ public class OrderService : IOrderService
         _context = context;
     }
 
-    public async Task<OrderDetailDto> CreateOrderAsync(CreateOrderDto dto, int? userId = null)
+    public async Task<OrderDetailDto> CreateOrderAsync(CreateOrderDto dto, int userId)
     {
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
@@ -155,28 +154,6 @@ public class OrderService : IOrderService
         }
 
         var order = await query.FirstOrDefaultAsync();
-        if (order == null)
-        {
-            return null;
-        }
-
-        return MapToOrderDetailDto(order);
-    }
-
-    public async Task<OrderDetailDto?> GetOrderByCodeAsync(string orderCode)
-    {
-        if (string.IsNullOrWhiteSpace(orderCode))
-        {
-            return null;
-        }
-
-        var normalized = orderCode.Trim().ToUpperInvariant();
-
-        var order = await _context.Orders
-            .AsNoTracking()
-            .Include(o => o.Items)
-            .FirstOrDefaultAsync(o => o.OrderCode.ToUpper() == normalized);
-
         if (order == null)
         {
             return null;

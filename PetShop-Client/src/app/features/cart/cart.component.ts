@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { CartService } from '../../core/services/cart.service';
+import { AuthService } from '../../core/services/auth.service';
 import { CartItem } from '../../core/models/order.model';
 
 @Component({
@@ -202,6 +203,7 @@ export class CartComponent implements OnInit {
 
   constructor(
     private cartService: CartService,
+    private authService: AuthService,
     private router: Router
   ) {}
 
@@ -267,6 +269,10 @@ export class CartComponent implements OnInit {
 
   proceedToCheckout(): void {
     if (this.items.length === 0) return;
+    if (!this.authService.currentUserValue) {
+      this.router.navigate(['/auth/login'], { queryParams: { returnUrl: '/checkout' } });
+      return;
+    }
     this.router.navigate(['/checkout']);
   }
 

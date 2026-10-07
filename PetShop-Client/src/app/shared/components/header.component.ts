@@ -31,26 +31,6 @@ import { AuthResponse } from '../../core/models/auth.model';
             </span>
           </div>
 
-          <!-- CENTER: Order Tracking -->
-          <div class="top-center d-none d-md-flex">
-            <div class="tracking-search">
-              <input
-                type="text"
-                [(ngModel)]="orderTrackingCode"
-                (keyup.enter)="onTrackOrder()"
-                placeholder="Tra cứu đơn hàng..."
-              />
-
-              <button
-                type="button"
-                (click)="onTrackOrder()"
-                title="Tra cứu đơn hàng"
-              >
-                <i class="fa-solid fa-magnifying-glass"></i>
-              </button>
-            </div>
-          </div>
-
           <!-- RIGHT: Admin + Profile -->
           <div class="top-right">
 
@@ -62,15 +42,6 @@ import { AuthResponse } from '../../core/models/auth.model';
             >
               <i class="fa-solid fa-gauge-high"></i>
               <span>Quản trị</span>
-            </a>
-
-            <!-- Mobile tracking -->
-            <a
-              routerLink="/orders/tracking"
-              class="mobile-tracking d-md-none"
-            >
-              <i class="fa-solid fa-magnifying-glass"></i>
-              Tra cứu
             </a>
 
             <!-- Logged in -->
@@ -136,20 +107,6 @@ import { AuthResponse } from '../../core/models/auth.model';
                     <i class="fa-solid fa-chevron-right menu-arrow"></i>
                   </a>
 
-                  <!-- Tracking -->
-                  <a
-                    class="user-menu-item"
-                    routerLink="/orders/tracking"
-                    (click)="isUserMenuOpen = false"
-                  >
-                    <span class="menu-icon cyan">
-                      <i class="fa-solid fa-magnifying-glass"></i>
-                    </span>
-
-                    <span>Tra cứu đơn hàng</span>
-
-                    <i class="fa-solid fa-chevron-right menu-arrow"></i>
-                  </a>
 
                   <!-- Admin -->
                   <a
@@ -416,66 +373,6 @@ import { AuthResponse } from '../../core/models/auth.model';
         font-size: 12px;
       }
 
-      /* CENTER */
-
-      .top-center {
-        justify-content: center;
-      }
-
-      .tracking-search {
-        width: 230px;
-        height: 27px;
-
-        display: flex;
-        align-items: center;
-
-        background: rgba(255, 255, 255, 0.98);
-        border-radius: 20px;
-        overflow: hidden;
-
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
-      }
-
-      .tracking-search input {
-        flex: 1;
-
-        width: 100%;
-        height: 100%;
-
-        border: none;
-        outline: none;
-
-        padding: 0 10px;
-
-        color: #333;
-        font-size: 11px;
-
-        background: transparent;
-      }
-
-      .tracking-search input::placeholder {
-        color: #999;
-      }
-
-      .tracking-search button {
-        width: 34px;
-        height: 100%;
-
-        border: none;
-        background: transparent;
-
-        color: #ff5722;
-
-        cursor: pointer;
-
-        transition: all 0.2s ease;
-      }
-
-      .tracking-search button:hover {
-        background: #fff1ec;
-        color: #e64a19;
-      }
-
       /* RIGHT */
 
       .top-right {
@@ -488,8 +385,7 @@ import { AuthResponse } from '../../core/models/auth.model';
         min-width: 0;
       }
 
-      .admin-link,
-      .mobile-tracking {
+      .admin-link {
         color: white;
         text-decoration: none;
 
@@ -502,8 +398,7 @@ import { AuthResponse } from '../../core/models/auth.model';
         transition: opacity 0.2s ease;
       }
 
-      .admin-link:hover,
-      .mobile-tracking:hover {
+      .admin-link:hover {
         color: white;
         opacity: 0.8;
       }
@@ -1322,7 +1217,6 @@ export class HeaderComponent implements OnInit {
   cartCount$: Observable<number>;
 
   searchKeyword: string = '';
-  orderTrackingCode: string = '';
 
   isUserMenuOpen: boolean = false;
 
@@ -1355,23 +1249,6 @@ export class HeaderComponent implements OnInit {
     this.isUserMenuOpen = false;
   }
 
-  /**
-   * Track order
-   */
-  onTrackOrder(): void {
-    if (!this.orderTrackingCode || !this.orderTrackingCode.trim()) {
-      this.router.navigate(['/orders/tracking']);
-      return;
-    }
-
-    this.router.navigate(['/orders/tracking'], {
-      queryParams: {
-        code: this.orderTrackingCode.trim(),
-      },
-    });
-
-    this.orderTrackingCode = '';
-  }
 
   /**
    * Search products
