@@ -16,6 +16,7 @@ public class PetShopDbContext : DbContext
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<Review> Reviews => Set<Review>();
+    public DbSet<UserExternalAccount> UserExternalAccounts => Set<UserExternalAccount>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -71,6 +72,7 @@ public class PetShopDbContext : DbContext
             entity.HasIndex(u => u.Username).IsUnique().HasDatabaseName("IX_Users_Username");
             entity.Property(u => u.FullName).HasMaxLength(150).IsRequired();
             entity.Property(u => u.Role).HasMaxLength(50).IsRequired();
+            entity.Property(u => u.AvatarUrl).HasMaxLength(500);
         });
 
         // Order indexing & configuration
@@ -127,6 +129,34 @@ public class PetShopDbContext : DbContext
                   .WithMany(u => u.Reviews)
                   .HasForeignKey(r => r.UserId)
                   .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // UserExternalAccount configuration
+        modelBuilder.Entity<UserExternalAccount>(entity =>
+        {
+            entity.ToTable("user_external_accounts");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.Provider).HasColumnName("provider").HasMaxLength(50).IsRequired();
+            entity.Property(e => e.ProviderKey).HasColumnName("provider_key").HasMaxLength(250).IsRequired();
+            entity.Property(e => e.ProviderEmail).HasColumnName("provider_email").HasMaxLength(250);
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").IsRequired();
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+            // Constraints & Indexes
+            entity.HasIndex(e => new { e.Provider, e.ProviderKey })
+                  .IsUnique()
+                  .HasDatabaseName("IX_user_external_accounts_provider_provider_key");
+
+            entity.HasIndex(e => new { e.UserId, e.Provider })
+                  .IsUnique()
+                  .HasDatabaseName("IX_user_external_accounts_user_id_provider");
+
+            entity.HasOne(e => e.User)
+                  .WithMany(u => u.ExternalAccounts)
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

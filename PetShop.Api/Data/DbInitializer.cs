@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using PetShop.Api.Models;
 
 namespace PetShop.Api.Data;
@@ -6,9 +7,12 @@ public static class DbInitializer
 {
     public static void Initialize(PetShopDbContext context)
     {
-        context.Database.EnsureCreated();
+        context.Database.Migrate();
 
-        // 1. Kiểm tra nếu đã có dữ liệu thì không seed lại
+        // 1. Seed tài khoản liên kết OAuth thử nghiệm (idempotent, không tạo duplicate)
+        SeedExternalAccounts(context);
+
+        // 2. Kiểm tra nếu đã có dữ liệu catalog thì không seed lại
         if (context.Categories.Any())
         {
             return;
@@ -1073,5 +1077,40 @@ public static class DbInitializer
 
         context.Products.AddRange(products);
         context.SaveChanges();
+    }
+
+    /// <summary>
+    /// Seed tài khoản liên kết OAuth (Google) mẫu cho môi trường development/testing.
+    /// Thuộc về user: 'user@petshop.com' (User Id #2).
+    /// Đảm bảo tính idempotent: chỉ thêm nếu chưa tồn tại liên kết cho provider tương ứng.
+    /// </summary>
+    private static void SeedExternalAccounts(PetShopDbContext context)
+    {
+        var testUser = context.Users.FirstOrDefault(u => u.Email == "user@petshop.com");
+        if (testUser == null)
+        {
+            return;
+        }
+
+        // Kiểm tra tránh vi phạm UNIQUE(user_id, provider) và UNIQUE(provider, provider_key)
+        const string provider = "Google";
+        const string providerKey = "google_user_dev_test_sub_1001"; // Google 'sub' claim format
+
+        bool alreadyLinked = context.UserExternalAccounts.Any(a =>
+            (a.UserId == testUser.Id && a.Provider == provider) ||
+            (a.Provider == provider && a.ProviderKey == providerKey));
+
+        if (!alreadyLinked)
+        {
+            context.UserExternalAccounts.Add(new UserExternalAccount
+            {
+                UserId = testUser.Id,
+                Provider = provider,
+                ProviderKey = providerKey,
+                ProviderEmail = testUser.Email,
+                CreatedAt = DateTime.UtcNow
+            });
+            context.SaveChanges();
+        }
     }
 }

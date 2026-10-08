@@ -13,10 +13,13 @@ public class User
     // Role: "Admin" hoặc "User"
     public string Role { get; set; } = "User";
 
+    public string? AvatarUrl { get; set; }
+
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation
     public ICollection<Order> Orders { get; set; } = new List<Order>();
     public ICollection<Review> Reviews { get; set; } = new List<Review>();
+    public ICollection<UserExternalAccount> ExternalAccounts { get; set; } = new List<UserExternalAccount>();
 }

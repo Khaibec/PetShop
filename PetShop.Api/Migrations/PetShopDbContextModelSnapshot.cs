@@ -445,6 +445,10 @@ namespace PetShop.Api.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("AvatarUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -488,6 +492,57 @@ namespace PetShop.Api.Migrations
                         .HasDatabaseName("IX_Users_Username");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("PetShop.Api.Models.UserExternalAccount", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("provider");
+
+                    b.Property<string>("ProviderEmail")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)")
+                        .HasColumnName("provider_email");
+
+                    b.Property<string>("ProviderKey")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)")
+                        .HasColumnName("provider_key");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("updated_at");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Provider", "ProviderKey")
+                        .IsUnique()
+                        .HasDatabaseName("IX_user_external_accounts_provider_provider_key");
+
+                    b.HasIndex("UserId", "Provider")
+                        .IsUnique()
+                        .HasDatabaseName("IX_user_external_accounts_user_id_provider");
+
+                    b.ToTable("user_external_accounts", (string)null);
                 });
 
             modelBuilder.Entity("PetShop.Api.Models.Order", b =>
@@ -553,6 +608,17 @@ namespace PetShop.Api.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("PetShop.Api.Models.UserExternalAccount", b =>
+                {
+                    b.HasOne("PetShop.Api.Models.User", "User")
+                        .WithMany("ExternalAccounts")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("PetShop.Api.Models.Category", b =>
                 {
                     b.Navigation("Products");
@@ -577,6 +643,8 @@ namespace PetShop.Api.Migrations
 
             modelBuilder.Entity("PetShop.Api.Models.User", b =>
                 {
+                    b.Navigation("ExternalAccounts");
+
                     b.Navigation("Orders");
 
                     b.Navigation("Reviews");
