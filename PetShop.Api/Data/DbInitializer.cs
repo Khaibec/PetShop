@@ -12,7 +12,10 @@ public static class DbInitializer
         // 1. Seed tài khoản liên kết OAuth thử nghiệm (idempotent, không tạo duplicate)
         SeedExternalAccounts(context);
 
-        // 2. Kiểm tra nếu đã có dữ liệu catalog thì không seed lại
+        // 2. Seed dữ liệu hội thoại chat mẫu (idempotent)
+        SeedChatData(context);
+
+        // 3. Kiểm tra nếu đã có dữ liệu catalog thì không seed lại
         if (context.Categories.Any())
         {
             return;
@@ -1110,6 +1113,75 @@ public static class DbInitializer
                 ProviderEmail = testUser.Email,
                 CreatedAt = DateTime.UtcNow
             });
+            context.SaveChanges();
+        }
+    }
+
+    /// <summary>
+    /// Seed hội thoại và tin nhắn mẫu giữa khách hàng (user@petshop.com) và Admin.
+    /// Idempotent: chỉ tạo nếu chưa có hội thoại nào cho user.
+    /// </summary>
+    private static void SeedChatData(PetShopDbContext context)
+    {
+        var customer = context.Users.FirstOrDefault(u => u.Email == "user@petshop.com");
+        var admin = context.Users.FirstOrDefault(u => u.Role == "Admin");
+
+        if (customer == null || admin == null)
+        {
+            return;
+        }
+
+        if (!context.Conversations.Any(c => c.CustomerId == customer.Id))
+        {
+            var now = DateTime.UtcNow;
+            var conversation = new Conversation
+            {
+                CustomerId = customer.Id,
+                AdminId = admin.Id,
+                Status = "Open",
+                CreatedAt = now.AddMinutes(-30),
+                UpdatedAt = now.AddMinutes(-5),
+                LastMessageAt = now.AddMinutes(-5)
+            };
+
+            context.Conversations.Add(conversation);
+            context.SaveChanges();
+
+            var messages = new List<Message>
+            {
+                new Message
+                {
+                    ConversationId = conversation.Id,
+                    SenderId = customer.Id,
+                    SenderRole = "Customer",
+                    Content = "Chào shop, mình muốn hỏi bé Corgi 2 tháng tuổi đã được tiêm phòng mấy mũi rồi ạ?",
+                    CreatedAt = now.AddMinutes(-25),
+                    ReadAt = now.AddMinutes(-20),
+                    IsDeleted = false
+                },
+                new Message
+                {
+                    ConversationId = conversation.Id,
+                    SenderId = admin.Id,
+                    SenderRole = "Admin",
+                    Content = "Dạ chào bạn! Bé Corgi bên mình hiện đã được tiêm đủ 2 mũi vaccine 7 bệnh và sổ giun định kỳ 2 lần, có kèm sổ sức khỏe bảo hành 30 ngày bạn nhé!",
+                    CreatedAt = now.AddMinutes(-15),
+                    ReadAt = now.AddMinutes(-10),
+                    IsDeleted = false
+                },
+                new Message
+                {
+                    ConversationId = conversation.Id,
+                    SenderId = customer.Id,
+                    SenderRole = "Customer",
+                    Content = "Tuyệt quá, shop có hỗ trợ ship an toàn về nội thành Hà Nội trong ngày không ạ?",
+                    CreatedAt = now.AddMinutes(-5),
+                    ReadAt = null, // Tin chưa đọc để test badge unread của Admin
+                    IsDeleted = false
+                }
+            };
+
+            context.Messages.AddRange(messages);
             context.SaveChanges();
         }
     }

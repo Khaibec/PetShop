@@ -17,6 +17,8 @@ public class PetShopDbContext : DbContext
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<Review> Reviews => Set<Review>();
     public DbSet<UserExternalAccount> UserExternalAccounts => Set<UserExternalAccount>();
+    public DbSet<Conversation> Conversations => Set<Conversation>();
+    public DbSet<Message> Messages => Set<Message>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -157,6 +159,50 @@ public class PetShopDbContext : DbContext
                   .WithMany(u => u.ExternalAccounts)
                   .HasForeignKey(e => e.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Conversation configuration
+        modelBuilder.Entity<Conversation>(entity =>
+        {
+            entity.HasKey(c => c.Id);
+            entity.Property(c => c.Status).HasMaxLength(50).IsRequired().HasDefaultValue("Open");
+
+            entity.HasIndex(c => c.CustomerId).HasDatabaseName("IX_Conversations_CustomerId");
+            entity.HasIndex(c => c.Status).HasDatabaseName("IX_Conversations_Status");
+            entity.HasIndex(c => c.LastMessageAt).HasDatabaseName("IX_Conversations_LastMessageAt");
+
+            entity.HasOne(c => c.Customer)
+                  .WithMany(u => u.CustomerConversations)
+                  .HasForeignKey(c => c.CustomerId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(c => c.Admin)
+                  .WithMany(u => u.AdminConversations)
+                  .HasForeignKey(c => c.AdminId)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Message configuration
+        modelBuilder.Entity<Message>(entity =>
+        {
+            entity.HasKey(m => m.Id);
+            entity.Property(m => m.Content).HasMaxLength(2000).IsRequired();
+            entity.Property(m => m.SenderRole).HasMaxLength(50).IsRequired();
+
+            entity.HasIndex(m => new { m.ConversationId, m.CreatedAt })
+                  .HasDatabaseName("IX_Messages_ConversationId_CreatedAt");
+            entity.HasIndex(m => m.SenderId)
+                  .HasDatabaseName("IX_Messages_SenderId");
+
+            entity.HasOne(m => m.Conversation)
+                  .WithMany(c => c.Messages)
+                  .HasForeignKey(m => m.ConversationId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(m => m.Sender)
+                  .WithMany(u => u.SentMessages)
+                  .HasForeignKey(m => m.SenderId)
+                  .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

@@ -10,6 +10,7 @@ import { ProductCardComponent } from './components/product-card.component';
 import { PetCardComponent } from './components/pet-card.component';
 import { PaginationComponent } from './components/pagination.component';
 import { RatingStarsComponent } from './components/rating-stars.component';
+import { ChatWidgetComponent } from './components/chat-widget.component';
 
 @NgModule({
   declarations: [
@@ -19,7 +20,8 @@ import { RatingStarsComponent } from './components/rating-stars.component';
     ProductCardComponent,
     PetCardComponent,
     PaginationComponent,
-    RatingStarsComponent
+    RatingStarsComponent,
+    ChatWidgetComponent
   ],
   imports: [
     CommonModule,
@@ -38,7 +40,8 @@ import { RatingStarsComponent } from './components/rating-stars.component';
     ProductCardComponent,
     PetCardComponent,
     PaginationComponent,
-    RatingStarsComponent
+    RatingStarsComponent,
+    ChatWidgetComponent
   ]
 })
 export class SharedModule {}

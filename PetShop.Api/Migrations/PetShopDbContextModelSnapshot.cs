@@ -73,6 +73,96 @@ namespace PetShop.Api.Migrations
                     b.ToTable("Categories");
                 });
 
+            modelBuilder.Entity("PetShop.Api.Models.Conversation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AdminId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("LastMessageAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("Open");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AdminId");
+
+                    b.HasIndex("CustomerId")
+                        .HasDatabaseName("IX_Conversations_CustomerId");
+
+                    b.HasIndex("LastMessageAt")
+                        .HasDatabaseName("IX_Conversations_LastMessageAt");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("IX_Conversations_Status");
+
+                    b.ToTable("Conversations");
+                });
+
+            modelBuilder.Entity("PetShop.Api.Models.Message", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("ConversationId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("SenderId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SenderRole")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SenderId")
+                        .HasDatabaseName("IX_Messages_SenderId");
+
+                    b.HasIndex("ConversationId", "CreatedAt")
+                        .HasDatabaseName("IX_Messages_ConversationId_CreatedAt");
+
+                    b.ToTable("Messages");
+                });
+
             modelBuilder.Entity("PetShop.Api.Models.Order", b =>
                 {
                     b.Property<int>("Id")
@@ -545,6 +635,43 @@ namespace PetShop.Api.Migrations
                     b.ToTable("user_external_accounts", (string)null);
                 });
 
+            modelBuilder.Entity("PetShop.Api.Models.Conversation", b =>
+                {
+                    b.HasOne("PetShop.Api.Models.User", "Admin")
+                        .WithMany("AdminConversations")
+                        .HasForeignKey("AdminId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("PetShop.Api.Models.User", "Customer")
+                        .WithMany("CustomerConversations")
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Admin");
+
+                    b.Navigation("Customer");
+                });
+
+            modelBuilder.Entity("PetShop.Api.Models.Message", b =>
+                {
+                    b.HasOne("PetShop.Api.Models.Conversation", "Conversation")
+                        .WithMany("Messages")
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PetShop.Api.Models.User", "Sender")
+                        .WithMany("SentMessages")
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Conversation");
+
+                    b.Navigation("Sender");
+                });
+
             modelBuilder.Entity("PetShop.Api.Models.Order", b =>
                 {
                     b.HasOne("PetShop.Api.Models.User", "User")
@@ -624,6 +751,11 @@ namespace PetShop.Api.Migrations
                     b.Navigation("Products");
                 });
 
+            modelBuilder.Entity("PetShop.Api.Models.Conversation", b =>
+                {
+                    b.Navigation("Messages");
+                });
+
             modelBuilder.Entity("PetShop.Api.Models.Order", b =>
                 {
                     b.Navigation("Items");
@@ -643,11 +775,17 @@ namespace PetShop.Api.Migrations
 
             modelBuilder.Entity("PetShop.Api.Models.User", b =>
                 {
+                    b.Navigation("AdminConversations");
+
+                    b.Navigation("CustomerConversations");
+
                     b.Navigation("ExternalAccounts");
 
                     b.Navigation("Orders");
 
                     b.Navigation("Reviews");
+
+                    b.Navigation("SentMessages");
                 });
 #pragma warning restore 612, 618
         }

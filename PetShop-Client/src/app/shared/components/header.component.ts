@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { CartService } from '../../core/services/cart.service';
+import { ChatService } from '../../core/services/chat.service';
 import { AuthResponse } from '../../core/models/auth.model';
 
 @Component({
@@ -42,6 +43,20 @@ import { AuthResponse } from '../../core/models/auth.model';
             >
               <i class="fa-solid fa-gauge-high"></i>
               <span>Quản trị</span>
+            </a>
+
+            <!-- Chat hỗ trợ -->
+            <a
+              href="javascript:void(0)"
+              (click)="onOpenChat()"
+              class="admin-link d-flex align-items-center"
+              title="Chat tư vấn với PetShop"
+            >
+              <i class="fa-solid fa-comments"></i>
+              <span>Hỗ trợ</span>
+              <span *ngIf="(unreadChatCount$ | async) as count" class="badge bg-danger rounded-pill ms-1" style="font-size: 10px;">
+                {{ count > 99 ? '99+' : count }}
+              </span>
             </a>
 
             <!-- Logged in -->
@@ -105,6 +120,23 @@ import { AuthResponse } from '../../core/models/auth.model';
                     <span>Đơn hàng của tôi</span>
 
                     <i class="fa-solid fa-chevron-right menu-arrow"></i>
+                  </a>
+
+                  <!-- Chat với cửa hàng -->
+                  <a
+                    class="user-menu-item"
+                    href="javascript:void(0)"
+                    (click)="onOpenChat()"
+                  >
+                    <span class="menu-icon green">
+                      <i class="fa-solid fa-comments"></i>
+                    </span>
+
+                    <span>Chat với cửa hàng</span>
+                    <span *ngIf="(unreadChatCount$ | async) as count" class="badge bg-danger rounded-pill ms-auto me-2">
+                      {{ count }}
+                    </span>
+                    <i *ngIf="!(unreadChatCount$ | async)" class="fa-solid fa-chevron-right menu-arrow"></i>
                   </a>
 
 
@@ -1215,6 +1247,7 @@ export class HeaderComponent implements OnInit {
   currentUser$: Observable<AuthResponse | null>;
   isAdmin$: Observable<boolean>;
   cartCount$: Observable<number>;
+  unreadChatCount$: Observable<number>;
 
   searchKeyword: string = '';
 
@@ -1223,14 +1256,21 @@ export class HeaderComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private cartService: CartService,
+    private chatService: ChatService,
     private router: Router,
   ) {
     this.currentUser$ = this.authService.currentUser$;
     this.isAdmin$ = this.authService.isAdmin$;
     this.cartCount$ = this.cartService.itemCount$;
+    this.unreadChatCount$ = this.chatService.unreadCount$;
   }
 
   ngOnInit(): void {}
+
+  onOpenChat(): void {
+    this.isUserMenuOpen = false;
+    this.chatService.requestOpenChat();
+  }
 
   /**
    * Toggle user dropdown

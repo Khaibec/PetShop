@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using PetShop.Api.Data;
+using PetShop.Api.Hubs;
 using PetShop.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -46,6 +47,10 @@ builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IPetService, PetService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IChatService, ChatService>();
+
+// Realtime SignalR
+builder.Services.AddSignalR();
 
 // 5. Cấu hình Xác thực JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "PetShopSecretKey2026SuperSecureKeyWithLongEnoughEntropy!";
@@ -70,6 +75,21 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidAudience = audience,
         ClockSkew = TimeSpan.Zero
+    };
+
+    // Đọc JWT Token từ query string cho kết nối SignalR WebSocket/SSE
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/chat"))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
     };
 });
 
@@ -155,5 +175,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<ChatHub>("/hubs/chat");
 
 app.Run();

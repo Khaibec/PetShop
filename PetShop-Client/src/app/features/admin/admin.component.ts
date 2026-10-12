@@ -1,8 +1,10 @@
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { OrderService } from '../../core/services/order.service';
 import { PetService } from '../../core/services/pet.service';
 import { ProductService } from '../../core/services/product.service';
 import { CategoryService } from '../../core/services/category.service';
+import { ChatService } from '../../core/services/chat.service';
 import { OrderList } from '../../core/models/order.model';
 import { Pet } from '../../core/models/pet.model';
 import { Product } from '../../core/models/product.model';
@@ -44,6 +46,15 @@ import { Category } from '../../core/models/category.model';
             <button class="list-group-item list-group-item-action py-3 fw-semibold border-0 d-flex align-items-center gap-2"
                     [class.active]="activeTab === 'products'" (click)="activeTab = 'products'; loadProducts()">
               <i class="fa-solid fa-bone fs-5"></i> Sản Phẩm
+            </button>
+            <button class="list-group-item list-group-item-action py-3 fw-semibold border-0 d-flex align-items-center justify-content-between"
+                    [class.active]="activeTab === 'chat'" (click)="activeTab = 'chat'">
+              <div class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-comments fs-5"></i> Tin Nhắn & Hỗ Trợ
+              </div>
+              <span *ngIf="(unreadChatCount$ | async) as count" class="badge bg-danger rounded-pill">
+                {{ count }}
+              </span>
             </button>
           </div>
         </div>
@@ -328,6 +339,11 @@ import { Category } from '../../core/models/category.model';
             </div>
           </div>
 
+          <!-- 5. CHAT TAB -->
+          <div *ngIf="activeTab === 'chat'">
+            <app-admin-chat></app-admin-chat>
+          </div>
+
         </div>
       </div>
     </div>
@@ -341,7 +357,8 @@ import { Category } from '../../core/models/category.model';
   `]
 })
 export class AdminComponent implements OnInit {
-  activeTab: 'dashboard' | 'orders' | 'pets' | 'products' = 'dashboard';
+  activeTab: 'dashboard' | 'orders' | 'pets' | 'products' | 'chat' = 'dashboard';
+  unreadChatCount$ = this.chatService.unreadCount$;
   stats: any = null;
   allOrders: OrderList[] = [];
   allPets: Pet[] = [];
@@ -373,10 +390,17 @@ export class AdminComponent implements OnInit {
   constructor(
     private orderService: OrderService,
     private petService: PetService,
-    private productService: ProductService
+    private productService: ProductService,
+    private chatService: ChatService,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
+    const routePath = this.route.snapshot.routeConfig?.path;
+    const tabParam = this.route.snapshot.queryParams['tab'];
+    if (routePath === 'chat' || tabParam === 'chat') {
+      this.activeTab = 'chat';
+    }
     this.loadStats();
   }
 

@@ -22,4 +22,7 @@ public class User
     public ICollection<Order> Orders { get; set; } = new List<Order>();
     public ICollection<Review> Reviews { get; set; } = new List<Review>();
     public ICollection<UserExternalAccount> ExternalAccounts { get; set; } = new List<UserExternalAccount>();
+    public ICollection<Conversation> CustomerConversations { get; set; } = new List<Conversation>();
+    public ICollection<Conversation> AdminConversations { get; set; } = new List<Conversation>();
+    public ICollection<Message> SentMessages { get; set; } = new List<Message>();
 }
