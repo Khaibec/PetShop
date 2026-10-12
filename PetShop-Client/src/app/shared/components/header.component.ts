@@ -45,8 +45,9 @@ import { AuthResponse } from '../../core/models/auth.model';
               <span>Quản trị</span>
             </a>
 
-            <!-- Chat hỗ trợ -->
+            <!-- Chat hỗ trợ (Ẩn đối với Admin) -->
             <a
+              *ngIf="!(isAdmin$ | async)"
               href="javascript:void(0)"
               (click)="onOpenChat()"
               class="admin-link d-flex align-items-center"
@@ -122,8 +123,9 @@ import { AuthResponse } from '../../core/models/auth.model';
                     <i class="fa-solid fa-chevron-right menu-arrow"></i>
                   </a>
 
-                  <!-- Chat với cửa hàng -->
+                  <!-- Chat với cửa hàng (Ẩn đối với Admin) -->
                   <a
+                    *ngIf="user.role !== 'Admin'"
                     class="user-menu-item"
                     href="javascript:void(0)"
                     (click)="onOpenChat()"

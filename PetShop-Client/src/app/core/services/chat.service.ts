@@ -40,6 +40,9 @@ export class ChatService {
   public openChatRequested$ = new Subject<void>();
 
   public requestOpenChat(): void {
+    if (this.authService.isAdmin) {
+      return;
+    }
     this.openChatRequested$.next();
   }
 

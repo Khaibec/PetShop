@@ -493,7 +493,6 @@ export class AdminChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.subs.add(
       this.chatService.activeMessages$.subscribe(msgs => {
         this.messages = msgs;
-        this.shouldScrollBottom = true;
       })
     );
 
@@ -535,9 +534,6 @@ export class AdminChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.chatService.typingUsers$.subscribe(map => {
         if (this.selectedConversation) {
           this.isCustomerTyping = map.has(this.selectedConversation.customerId);
-          if (this.isCustomerTyping) {
-            this.shouldScrollBottom = true;
-          }
         }
       })
     );
@@ -592,14 +588,13 @@ export class AdminChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.selectedConversation = conv;
     conv.unreadCount = 0; // Đã click vào -> xem như đã đọc
     this.isLoadingMessages = true;
-    this.shouldScrollBottom = true;
+    this.shouldScrollBottom = false;
 
     this.chatService.setActiveConversation(conv);
 
     setTimeout(() => {
       this.isLoadingMessages = false;
-      this.replyInputEl?.nativeElement?.focus();
-      this.scrollToBottom();
+      // Không tự động focus hoặc scroll để giữ nguyên màn hình cho admin
     }, 150);
   }
 
@@ -617,7 +612,7 @@ export class AdminChatComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.replyText = '';
         this.isSending = false;
         this.shouldScrollBottom = true;
-        setTimeout(() => this.replyInputEl?.nativeElement?.focus(), 50);
+        setTimeout(() => this.replyInputEl?.nativeElement?.focus({ preventScroll: true }), 50);
       },
       error: () => {
         this.isSending = false;

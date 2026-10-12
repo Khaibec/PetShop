@@ -8,8 +8,9 @@ import { Conversation, Message } from '../../core/models/chat.model';
 @Component({
   selector: 'app-chat-widget',
   template: `
-    <!-- 1. Floating Trigger Button (Góc dưới phải màn hình) -->
-    <div class="chat-widget-trigger" *ngIf="!isOpen" (click)="openChat()">
+    <ng-container *ngIf="!(isAdmin$ | async)">
+      <!-- 1. Floating Trigger Button (Góc dưới phải màn hình) -->
+      <div class="chat-widget-trigger" *ngIf="!isOpen" (click)="openChat()">
       <div class="trigger-icon-wrap">
         <i class="fa-solid fa-comments"></i>
         <span class="unread-badge" *ngIf="(unreadCount$ | async) as count">
@@ -149,6 +150,7 @@ import { Conversation, Message } from '../../core/models/chat.model';
 
       </div>
     </div>
+  </ng-container>
   `,
   styles: [`
     /* Floating Trigger Button */
@@ -461,6 +463,7 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
 
   public unreadCount$ = this.chatService.unreadCount$;
   public isLoggedIn$ = this.authService.isLoggedIn$;
+  public isAdmin$ = this.authService.isAdmin$;
 
   private subs = new Subscription();
   private typingTimeout: any;
@@ -508,7 +511,9 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
     // Lắng nghe yêu cầu mở chat từ Header hoặc các component khác
     this.subs.add(
       this.chatService.openChatRequested$.subscribe(() => {
-        this.openChat();
+        if (!this.authService.isAdmin) {
+          this.openChat();
+        }
       })
     );
   }
@@ -528,6 +533,9 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
   }
 
   public openChat(): void {
+    if (this.authService.isAdmin) {
+      return;
+    }
     this.isOpen = true;
     this.shouldScrollBottom = true;
 

@@ -31,23 +31,23 @@ import { Category } from '../../core/models/category.model';
         <!-- Sidebar Navigation -->
         <div class="col-12 col-lg-2">
           <div class="list-group shadow-sm rounded-4 border-0 overflow-hidden">
-            <button class="list-group-item list-group-item-action py-3 fw-semibold border-0 d-flex align-items-center gap-2"
+            <button type="button" class="list-group-item list-group-item-action py-3 fw-semibold border-0 d-flex align-items-center gap-2"
                     [class.active]="activeTab === 'dashboard'" (click)="activeTab = 'dashboard'">
               <i class="fa-solid fa-chart-line fs-5"></i> Dashboard
             </button>
-            <button class="list-group-item list-group-item-action py-3 fw-semibold border-0 d-flex align-items-center gap-2"
+            <button type="button" class="list-group-item list-group-item-action py-3 fw-semibold border-0 d-flex align-items-center gap-2"
                     [class.active]="activeTab === 'orders'" (click)="activeTab = 'orders'; loadOrders()">
               <i class="fa-solid fa-box-open fs-5"></i> Đơn Hàng
             </button>
-            <button class="list-group-item list-group-item-action py-3 fw-semibold border-0 d-flex align-items-center gap-2"
+            <button type="button" class="list-group-item list-group-item-action py-3 fw-semibold border-0 d-flex align-items-center gap-2"
                     [class.active]="activeTab === 'pets'" (click)="activeTab = 'pets'; loadPets()">
               <i class="fa-solid fa-dog fs-5"></i> Thú Cưng
             </button>
-            <button class="list-group-item list-group-item-action py-3 fw-semibold border-0 d-flex align-items-center gap-2"
+            <button type="button" class="list-group-item list-group-item-action py-3 fw-semibold border-0 d-flex align-items-center gap-2"
                     [class.active]="activeTab === 'products'" (click)="activeTab = 'products'; loadProducts()">
               <i class="fa-solid fa-bone fs-5"></i> Sản Phẩm
             </button>
-            <button class="list-group-item list-group-item-action py-3 fw-semibold border-0 d-flex align-items-center justify-content-between"
+            <button type="button" class="list-group-item list-group-item-action py-3 fw-semibold border-0 d-flex align-items-center justify-content-between"
                     [class.active]="activeTab === 'chat'" (click)="activeTab = 'chat'">
               <div class="d-flex align-items-center gap-2">
                 <i class="fa-solid fa-comments fs-5"></i> Tin Nhắn & Hỗ Trợ

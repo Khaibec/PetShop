@@ -33,6 +33,10 @@ export class AuthService {
     return this.currentUser$.pipe(map(user => !!user && user.role === 'Admin'));
   }
 
+  public get isAdmin(): boolean {
+    return this.currentUserValue?.role === 'Admin';
+  }
+
   public getToken(): string | null {
     return this.currentUserValue ? this.currentUserValue.token : null;
   }
