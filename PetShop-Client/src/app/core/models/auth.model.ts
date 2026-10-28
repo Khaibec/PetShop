@@ -32,3 +32,10 @@ export interface AuthResponse {
   role: 'Admin' | 'User';
   expiresAt: string;
 }
+
+export interface ExternalAccount {
+  id: number;
+  provider: string;
+  providerEmail?: string;
+  createdAt: string;
+}

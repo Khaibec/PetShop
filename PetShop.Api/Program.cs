@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using System.Text;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
@@ -9,11 +10,48 @@ using PetShop.Api.Data;
 using PetShop.Api.Hubs;
 using PetShop.Api.Services;
 
+// Tự động nạp cấu hình từ file .env nếu có (dành cho môi trường development / Docker)
+static void LoadDotEnv(string filePath)
+{
+    if (!File.Exists(filePath)) return;
+    foreach (var line in File.ReadAllLines(filePath))
+    {
+        var trimmed = line.Trim();
+        if (string.IsNullOrWhiteSpace(trimmed) || trimmed.StartsWith("#")) continue;
+        var separatorIndex = trimmed.IndexOf('=');
+        if (separatorIndex > 0)
+        {
+            var key = trimmed.Substring(0, separatorIndex).Trim();
+            var value = trimmed.Substring(separatorIndex + 1).Trim().Trim('"', '\'');
+            if (!string.IsNullOrEmpty(key) && string.IsNullOrEmpty(Environment.GetEnvironmentVariable(key)))
+            {
+                Environment.SetEnvironmentVariable(key, value);
+            }
+        }
+    }
+}
+
+var currentDirectory = Directory.GetCurrentDirectory();
+LoadDotEnv(Path.Combine(currentDirectory, ".env"));
+var parentDirectory = Directory.GetParent(currentDirectory)?.FullName;
+if (!string.IsNullOrEmpty(parentDirectory))
+{
+    LoadDotEnv(Path.Combine(parentDirectory, ".env"));
+}
+
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Cấu hình DbContext kết nối SQL Server
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-    ?? "Server=localhost;Database=PetShopDb;Trusted_Connection=True;TrustServerCertificate=True;";
+// Đảm bảo nạp các biến môi trường vào hệ thống Configuration
+builder.Configuration.AddEnvironmentVariables();
+
+// 1. Cấu hình DbContext kết nối SQL Server (đọc từ Environment Variables hoặc appsettings)
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    connectionString = builder.Configuration["ConnectionStrings:DefaultConnection"]
+        ?? Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
+        ?? "Server=localhost;Database=PetShopDb;Trusted_Connection=True;TrustServerCertificate=True;";
+}
 
 builder.Services.AddDbContext<PetShopDbContext>(options =>
 {
@@ -52,15 +90,28 @@ builder.Services.AddScoped<IChatService, ChatService>();
 // Realtime SignalR
 builder.Services.AddSignalR();
 
-// 5. Cấu hình Xác thực JWT Authentication
-var jwtKey = builder.Configuration["Jwt:Key"] ?? "PetShopSecretKey2026SuperSecureKeyWithLongEnoughEntropy!";
+// 5. Cấu hình Xác thực JWT Authentication & OAuth Providers từ Environment Variables
+var jwtKey = builder.Configuration["Jwt:Key"];
+if (string.IsNullOrWhiteSpace(jwtKey))
+{
+    jwtKey = Environment.GetEnvironmentVariable("Jwt__Key") 
+        ?? "PetShopSecretKey2026SuperSecureKeyWithLongEnoughEntropy!";
+}
 var issuer = builder.Configuration["Jwt:Issuer"] ?? "PetShopApi";
 var audience = builder.Configuration["Jwt:Audience"] ?? "PetShopClient";
 
-builder.Services.AddAuthentication(options =>
+var authBuilder = builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddCookie("ExternalAuth", options =>
+{
+    options.Cookie.Name = ".PetShop.ExternalAuth";
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(10);
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.Cookie.HttpOnly = true;
 })
 .AddJwtBearer(options =>
 {
@@ -92,6 +143,80 @@ builder.Services.AddAuthentication(options =>
         }
     };
 });
+
+// Cấu hình Google OAuth
+var googleClientId = builder.Configuration["Authentication:Google:ClientId"]
+    ?? Environment.GetEnvironmentVariable("Authentication__Google__ClientId");
+var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]
+    ?? Environment.GetEnvironmentVariable("Authentication__Google__ClientSecret");
+
+if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientSecret))
+{
+    authBuilder.AddGoogle("Google", options =>
+    {
+        options.SignInScheme = "ExternalAuth";
+        options.ClientId = googleClientId;
+        options.ClientSecret = googleClientSecret;
+        options.CallbackPath = "/signin-google";
+        options.SaveTokens = true;
+        options.ClaimActions.MapJsonKey("picture", "picture");
+        options.CorrelationCookie.SameSite = SameSiteMode.Lax;
+        options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    });
+}
+
+// Cấu hình Facebook OAuth
+var facebookAppId = builder.Configuration["Authentication:Facebook:AppId"]
+    ?? Environment.GetEnvironmentVariable("Authentication__Facebook__AppId");
+var facebookAppSecret = builder.Configuration["Authentication:Facebook:AppSecret"]
+    ?? Environment.GetEnvironmentVariable("Authentication__Facebook__AppSecret");
+
+if (!string.IsNullOrEmpty(facebookAppId) && !string.IsNullOrEmpty(facebookAppSecret))
+{
+    authBuilder.AddFacebook("Facebook", options =>
+    {
+        options.SignInScheme = "ExternalAuth";
+        options.AppId = facebookAppId;
+        options.AppSecret = facebookAppSecret;
+        options.CallbackPath = "/signin-facebook";
+        options.SaveTokens = true;
+        options.Fields.Add("picture");
+        options.ClaimActions.MapCustomJson("picture", user =>
+        {
+            if (user.TryGetProperty("picture", out var picture) &&
+                picture.TryGetProperty("data", out var data) &&
+                data.TryGetProperty("url", out var url))
+            {
+                return url.GetString();
+            }
+            return null;
+        });
+        options.CorrelationCookie.SameSite = SameSiteMode.Lax;
+        options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    });
+}
+
+// Cấu hình GitHub OAuth
+var githubClientId = builder.Configuration["Authentication:GitHub:ClientId"]
+    ?? Environment.GetEnvironmentVariable("Authentication__GitHub__ClientId");
+var githubClientSecret = builder.Configuration["Authentication:GitHub:ClientSecret"]
+    ?? Environment.GetEnvironmentVariable("Authentication__GitHub__ClientSecret");
+
+if (!string.IsNullOrEmpty(githubClientId) && !string.IsNullOrEmpty(githubClientSecret))
+{
+    authBuilder.AddGitHub("GitHub", options =>
+    {
+        options.SignInScheme = "ExternalAuth";
+        options.ClientId = githubClientId;
+        options.ClientSecret = githubClientSecret;
+        options.CallbackPath = "/signin-github";
+        options.SaveTokens = true;
+        options.Scope.Add("user:email");
+        options.ClaimActions.MapJsonKey("avatar_url", "avatar_url");
+        options.CorrelationCookie.SameSite = SameSiteMode.Lax;
+        options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    });
+}
 
 builder.Services.AddAuthorization();
 

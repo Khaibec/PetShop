@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
-import { AuthResponse, LoginRequest, RegisterRequest } from '../models/auth.model';
+import { AuthResponse, ExternalAccount, LoginRequest, RegisterRequest } from '../models/auth.model';
 
 @Injectable({
   providedIn: 'root'
@@ -62,5 +62,22 @@ export class AuthService {
   logout(): void {
     localStorage.removeItem('petshop_user');
     this.currentUserSubject.next(null);
+  }
+
+  loginWithExternal(provider: 'Google' | 'Facebook' | 'GitHub', returnUrl: string = '/'): void {
+    window.location.href = `${this.apiUrl}/external-login?provider=${provider}&returnUrl=${encodeURIComponent(returnUrl)}`;
+  }
+
+  handleExternalLoginCallback(authData: AuthResponse): void {
+    localStorage.setItem('petshop_user', JSON.stringify(authData));
+    this.currentUserSubject.next(authData);
+  }
+
+  getExternalAccounts(): Observable<ExternalAccount[]> {
+    return this.http.get<ExternalAccount[]>(`${this.apiUrl}/external-accounts`);
+  }
+
+  unlinkExternalAccount(provider: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/external-accounts/${provider}`);
   }
 }

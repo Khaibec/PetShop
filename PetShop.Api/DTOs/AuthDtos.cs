@@ -54,3 +54,17 @@ public class UserDto
     public string Role { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
 }
+
+public class ExternalAccountDto
+{
+    public int Id { get; set; }
+    public string Provider { get; set; } = string.Empty;
+    public string? ProviderEmail { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+public class ExternalLoginDto
+{
+    public string Provider { get; set; } = string.Empty;
+    public string? ReturnUrl { get; set; }
+}

@@ -9,13 +9,23 @@ import { LoginRequest, RegisterRequest } from '../../core/models/auth.model';
     <div class="container my-5">
       <div class="row justify-content-center">
         <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+
+          <!-- Trở về trang chủ khi header bị ẩn -->
+          <div class="mb-3 d-flex justify-content-between align-items-center">
+            <a routerLink="/" class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm bg-white">
+              <i class="fa-solid fa-arrow-left me-1"></i> Về trang chủ
+            </a>
+          </div>
+
           <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
             <!-- Brand Logo -->
             <div class="text-center mb-4">
-              <div class="logo-box bg-warning-subtle text-warning rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 55px; height: 55px;">
-                <i class="fa-solid fa-paw fs-3"></i>
-              </div>
-              <h4 class="fw-bold brand-font text-dark mb-1">Chào mừng đến với PetShop</h4>
+              <a routerLink="/" class="text-decoration-none d-inline-block">
+                <div class="logo-box bg-warning-subtle text-warning rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 55px; height: 55px;">
+                  <i class="fa-solid fa-paw fs-3"></i>
+                </div>
+                <h4 class="fw-bold brand-font text-dark mb-1">Chào mừng đến với PetShop</h4>
+              </a>
               <p class="text-muted small">Đăng nhập để trải nghiệm mua sắm và quản lý đơn hàng</p>
             </div>
 
@@ -32,6 +42,31 @@ import { LoginRequest, RegisterRequest } from '../../core/models/auth.model';
                 </button>
               </li>
             </ul>
+
+            <!-- Social Login Buttons -->
+            <div class="mb-3">
+              <button (click)="loginWithExternal('Google')" type="button" class="btn btn-outline-danger w-100 rounded-pill fw-semibold py-2 mb-2 d-flex align-items-center justify-content-center shadow-sm">
+                <i class="fa-brands fa-google text-danger fs-5 me-2"></i>
+                Đăng nhập với Google
+              </button>
+              <div class="d-flex gap-2">
+                <button (click)="loginWithExternal('Facebook')" type="button" class="btn btn-outline-primary flex-grow-1 rounded-pill fw-semibold py-2 d-flex align-items-center justify-content-center shadow-sm">
+                  <i class="fa-brands fa-facebook text-primary fs-5 me-2"></i>
+                  Facebook
+                </button>
+                <button (click)="loginWithExternal('GitHub')" type="button" class="btn btn-outline-dark flex-grow-1 rounded-pill fw-semibold py-2 d-flex align-items-center justify-content-center shadow-sm">
+                  <i class="fa-brands fa-github text-dark fs-5 me-2"></i>
+                  GitHub
+                </button>
+              </div>
+            </div>
+
+            <!-- Divider -->
+            <div class="d-flex align-items-center my-3">
+              <hr class="flex-grow-1 my-0 text-muted" />
+              <span class="px-3 text-muted small fw-semibold">hoặc bằng tài khoản thường</span>
+              <hr class="flex-grow-1 my-0 text-muted" />
+            </div>
 
             <!-- Quick Demo Accounts Button Strip -->
             <div *ngIf="activeTab === 'login'" class="bg-light-subtle border rounded-3 p-3 mb-4">
@@ -166,6 +201,10 @@ export class LoginComponent implements OnInit {
   fillUserAccount(): void {
     this.loginData.usernameOrEmail = 'user@petshop.com';
     this.loginData.password = 'User@123';
+  }
+
+  loginWithExternal(provider: 'Google' | 'Facebook' | 'GitHub'): void {
+    this.authService.loginWithExternal(provider, this.returnUrl);
   }
 
   onLogin(): void {
