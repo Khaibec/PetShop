@@ -52,6 +52,7 @@ public class UserDto
     public string PhoneNumber { get; set; } = string.Empty;
     public string Address { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;
+    public string? AvatarUrl { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 
@@ -67,4 +68,15 @@ public class ExternalLoginDto
 {
     public string Provider { get; set; } = string.Empty;
     public string? ReturnUrl { get; set; }
+}
+
+public class LinkInitiateRequestDto
+{
+    [Required(ErrorMessage = "Nhà cung cấp (Google, Facebook, GitHub) là bắt buộc")]
+    public string Provider { get; set; } = string.Empty;
+}
+
+public class LinkInitiateResponseDto
+{
+    public string RedirectUrl { get; set; } = string.Empty;
 }

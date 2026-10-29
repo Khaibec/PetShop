@@ -6,6 +6,7 @@ export interface User {
   phoneNumber?: string;
   address?: string;
   role: 'Admin' | 'User';
+  avatarUrl?: string;
   createdAt?: string;
 }
 
@@ -38,4 +39,8 @@ export interface ExternalAccount {
   provider: string;
   providerEmail?: string;
   createdAt: string;
+}
+
+export interface LinkInitiateResponse {
+  redirectUrl: string;
 }

@@ -1,6 +1,6 @@
 @echo off
 echo ====================================================
-echo Khoi chay PetShop Client (Angular 12 SPA)
+echo Khoi chay PetShop Client 
 echo ====================================================
 cd PetShop-Client
 npm start

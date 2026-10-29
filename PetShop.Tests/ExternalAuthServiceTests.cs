@@ -43,6 +43,19 @@ public class ExternalAuthServiceTests
             CreatedAt = DateTime.UtcNow
         };
 
+        // Seed 1 active second user
+        var anotherUser = new User
+        {
+            Id = 12,
+            Username = "anotheruser",
+            Email = "another@petshop.com",
+            FullName = "Another User",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password123"),
+            Role = "User",
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        };
+
         // Seed 1 external account for existingUser
         var linkedAccount = new UserExternalAccount
         {
@@ -54,7 +67,7 @@ public class ExternalAuthServiceTests
             CreatedAt = DateTime.UtcNow
         };
 
-        context.Users.AddRange(existingUser, inactiveUser);
+        context.Users.AddRange(existingUser, inactiveUser, anotherUser);
         context.UserExternalAccounts.Add(linkedAccount);
         context.SaveChanges();
 
@@ -206,5 +219,76 @@ public class ExternalAuthServiceTests
         // Act again for non-existent provider
         var fail = await service.UnlinkExternalAccountAsync(10, "NonExistent");
         Assert.False(fail);
+    }
+
+    [Fact]
+    public async Task LinkExternalAccount_NewProvider_Success()
+    {
+        // Arrange: User 10 already has Google, wants to link Facebook
+        using var context = CreateInMemoryDbContext();
+        var config = CreateTestConfiguration();
+        var service = new AuthService(context, config);
+
+        // Act
+        var (success, error) = await service.LinkExternalAccountAsync(10, "Facebook", "fb_unique_key_999", "existing@facebook.com", "https://fb.com/pic.jpg");
+
+        // Assert
+        Assert.True(success);
+        Assert.Null(error);
+
+        var accounts = await service.GetExternalAccountsAsync(10);
+        Assert.Equal(2, accounts.Count);
+        Assert.Contains(accounts, a => a.Provider == "Facebook" && a.ProviderEmail == "existing@facebook.com");
+    }
+
+    [Fact]
+    public async Task LinkExternalAccount_SameProviderTwice_Fails()
+    {
+        // Arrange: User 10 already has Google, tries to link another Google account
+        using var context = CreateInMemoryDbContext();
+        var config = CreateTestConfiguration();
+        var service = new AuthService(context, config);
+
+        // Act
+        var (success, error) = await service.LinkExternalAccountAsync(10, "Google", "google_sub_different", "another_google@gmail.com");
+
+        // Assert
+        Assert.False(success);
+        Assert.NotNull(error);
+        Assert.Contains("Bạn đã liên kết một tài khoản Google rồi", error);
+    }
+
+    [Fact]
+    public async Task LinkExternalAccount_ProviderKeyBelongsToOtherUser_Fails()
+    {
+        // Arrange: User 10 already linked "google_sub_1001". User 12 tries to link the same "google_sub_1001"
+        using var context = CreateInMemoryDbContext();
+        var config = CreateTestConfiguration();
+        var service = new AuthService(context, config);
+
+        // Act
+        var (success, error) = await service.LinkExternalAccountAsync(12, "Google", "google_sub_1001", "some_email@gmail.com");
+
+        // Assert
+        Assert.False(success);
+        Assert.NotNull(error);
+        Assert.Contains("đã được liên kết với một người dùng khác", error);
+    }
+
+    [Fact]
+    public async Task LinkExternalAccount_AlreadyLinkedToSelf_Fails()
+    {
+        // Arrange: User 10 tries to link the exact same providerKey they already have
+        using var context = CreateInMemoryDbContext();
+        var config = CreateTestConfiguration();
+        var service = new AuthService(context, config);
+
+        // Act
+        var (success, error) = await service.LinkExternalAccountAsync(10, "Google", "google_sub_1001", "existing@petshop.com");
+
+        // Assert
+        Assert.False(success);
+        Assert.NotNull(error);
+        Assert.Contains("đã được liên kết với tài khoản của bạn rồi", error);
     }
 }

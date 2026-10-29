@@ -113,6 +113,7 @@ public class AuthService : IAuthService
                 PhoneNumber = u.PhoneNumber,
                 Address = u.Address,
                 Role = u.Role,
+                AvatarUrl = u.AvatarUrl,
                 CreatedAt = u.CreatedAt
             })
             .FirstOrDefaultAsync();
@@ -258,6 +259,63 @@ public class AuthService : IAuthService
             Role = user.Role,
             ExpiresAt = expiresAt
         };
+    }
+
+    public async Task<(bool Success, string? ErrorMessage)> LinkExternalAccountAsync(int userId, string provider, string providerKey, string? providerEmail, string? avatarUrl = null)
+    {
+        var normalizedProvider = provider.Trim();
+        var normalizedKey = providerKey.Trim();
+        var normalizedEmail = providerEmail?.Trim().ToLower();
+
+        // 1. Kiểm tra xem User có tồn tại và đang hoạt động không
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId && u.IsActive);
+        if (user == null)
+        {
+            return (false, "Người dùng không tồn tại hoặc tài khoản đã bị khóa.");
+        }
+
+        // 2. Kiểm tra xem ProviderKey này đã được liên kết với bất kỳ tài khoản nào chưa
+        var existingAccount = await _context.UserExternalAccounts
+            .FirstOrDefaultAsync(ea => ea.Provider.ToLower() == normalizedProvider.ToLower() && ea.ProviderKey == normalizedKey);
+
+        if (existingAccount != null)
+        {
+            if (existingAccount.UserId == userId)
+            {
+                return (false, $"Tài khoản {normalizedProvider} này đã được liên kết với tài khoản của bạn rồi.");
+            }
+            return (false, $"Tài khoản {normalizedProvider} này đã được liên kết với một người dùng khác trong hệ thống.");
+        }
+
+        // 3. Kiểm tra xem User này đã có liên kết với provider này chưa
+        var userHasProvider = await _context.UserExternalAccounts
+            .AnyAsync(ea => ea.UserId == userId && ea.Provider.ToLower() == normalizedProvider.ToLower());
+
+        if (userHasProvider)
+        {
+            return (false, $"Bạn đã liên kết một tài khoản {normalizedProvider} rồi. Vui lòng hủy liên kết cũ trước khi thêm liên kết mới.");
+        }
+
+        // 4. Tạo liên kết mới
+        var newAccount = new UserExternalAccount
+        {
+            UserId = userId,
+            Provider = normalizedProvider,
+            ProviderKey = normalizedKey,
+            ProviderEmail = normalizedEmail,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.UserExternalAccounts.Add(newAccount);
+
+        // Cập nhật AvatarUrl nếu User chưa có avatar
+        if (!string.IsNullOrEmpty(avatarUrl) && string.IsNullOrEmpty(user.AvatarUrl))
+        {
+            user.AvatarUrl = avatarUrl;
+        }
+
+        await _context.SaveChangesAsync();
+        return (true, null);
     }
 
     public async Task<List<ExternalAccountDto>> GetExternalAccountsAsync(int userId)

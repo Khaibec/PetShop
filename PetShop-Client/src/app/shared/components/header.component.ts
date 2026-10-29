@@ -158,6 +158,21 @@ import { AuthResponse } from '../../core/models/auth.model';
                     <i class="fa-solid fa-chevron-right menu-arrow"></i>
                   </a>
 
+                                    <!-- Cài đặt tài khoản -->
+                  <a
+                    class="user-menu-item"
+                    routerLink="/profile/settings"
+                    (click)="isUserMenuOpen = false"
+                  >
+                    <span class="menu-icon purple">
+                      <i class="fa-solid fa-gear"></i>
+                    </span>
+
+                    <span>Cài đặt tài khoản</span>
+
+                    <i class="fa-solid fa-chevron-right menu-arrow"></i>
+                  </a>
+
                   <div class="menu-divider"></div>
 
                   <!-- Logout -->
@@ -655,6 +670,11 @@ import { AuthResponse } from '../../core/models/auth.model';
       .menu-icon.orange {
         background: #fff3e8;
         color: #ff9800;
+      }
+
+      .menu-icon.purple {
+        background: #f3e8ff;
+        color: #9333ea;
       }
 
       .menu-icon.red {

@@ -9,23 +9,13 @@ import { LoginRequest, RegisterRequest } from '../../core/models/auth.model';
     <div class="container my-5">
       <div class="row justify-content-center">
         <div class="col-12 col-md-8 col-lg-6 col-xl-5">
-
-          <!-- Trở về trang chủ khi header bị ẩn -->
-          <div class="mb-3 d-flex justify-content-between align-items-center">
-            <a routerLink="/" class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm bg-white">
-              <i class="fa-solid fa-arrow-left me-1"></i> Về trang chủ
-            </a>
-          </div>
-
           <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
             <!-- Brand Logo -->
             <div class="text-center mb-4">
-              <a routerLink="/" class="text-decoration-none d-inline-block">
-                <div class="logo-box bg-warning-subtle text-warning rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 55px; height: 55px;">
-                  <i class="fa-solid fa-paw fs-3"></i>
-                </div>
-                <h4 class="fw-bold brand-font text-dark mb-1">Chào mừng đến với PetShop</h4>
-              </a>
+              <div class="logo-box bg-warning-subtle text-warning rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 55px; height: 55px;">
+                <i class="fa-solid fa-paw fs-3"></i>
+              </div>
+              <h4 class="fw-bold brand-font text-dark mb-1">Chào mừng đến với PetShop</h4>
               <p class="text-muted small">Đăng nhập để trải nghiệm mua sắm và quản lý đơn hàng</p>
             </div>
 
@@ -83,6 +73,7 @@ import { LoginRequest, RegisterRequest } from '../../core/models/auth.model';
 
             <!-- Error message alert -->
             <div *ngIf="errorMessage" class="alert alert-danger py-2 small mb-3">
+              <i class="fa-solid fa-circle-exclamation me-1"></i>
               {{ errorMessage }}
             </div>
 
@@ -187,7 +178,14 @@ export class LoginComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
+    this.route.queryParams.subscribe(params => {
+      this.returnUrl = params['returnUrl'] || '/';
+      const errorParam = params['error'];
+      if (errorParam) {
+        this.errorMessage = decodeURIComponent(errorParam);
+      }
+    });
+
     if (this.router.url.includes('register')) {
       this.activeTab = 'register';
     }

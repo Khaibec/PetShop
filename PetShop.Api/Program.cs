@@ -100,6 +100,22 @@ if (string.IsNullOrWhiteSpace(jwtKey))
 var issuer = builder.Configuration["Jwt:Issuer"] ?? "PetShopApi";
 var audience = builder.Configuration["Jwt:Audience"] ?? "PetShopClient";
 
+// Hàm xử lý lỗi khi người dùng từ chối/hủy cấp quyền ở trang OAuth bên thứ 3
+Task HandleRemoteFailure(RemoteFailureContext context)
+{
+    var frontendOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
+    var frontendBaseUrl = frontendOrigins?.FirstOrDefault() ?? "http://localhost:4200";
+
+    var isLinkFlow = context.Properties?.Items.ContainsKey("link_token") == true;
+    var targetUrl = isLinkFlow
+        ? $"{frontendBaseUrl}/profile/settings?error={Uri.EscapeDataString("Bạn đã hủy hoặc từ chối liên kết tài khoản bên thứ 3.")}"
+        : $"{frontendBaseUrl}/auth/login?error={Uri.EscapeDataString("Bạn đã hủy hoặc từ chối đăng nhập bằng tài khoản bên thứ 3.")}";
+
+    context.Response.Redirect(targetUrl);
+    context.HandleResponse();
+    return Task.CompletedTask;
+}
+
 var authBuilder = builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -162,6 +178,7 @@ if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientS
         options.ClaimActions.MapJsonKey("picture", "picture");
         options.CorrelationCookie.SameSite = SameSiteMode.Lax;
         options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        options.Events.OnRemoteFailure = HandleRemoteFailure;
     });
 }
 
@@ -193,6 +210,7 @@ if (!string.IsNullOrEmpty(facebookAppId) && !string.IsNullOrEmpty(facebookAppSec
         });
         options.CorrelationCookie.SameSite = SameSiteMode.Lax;
         options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        options.Events.OnRemoteFailure = HandleRemoteFailure;
     });
 }
 
@@ -215,6 +233,7 @@ if (!string.IsNullOrEmpty(githubClientId) && !string.IsNullOrEmpty(githubClientS
         options.ClaimActions.MapJsonKey("avatar_url", "avatar_url");
         options.CorrelationCookie.SameSite = SameSiteMode.Lax;
         options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        options.Events.OnRemoteFailure = HandleRemoteFailure;
     });
 }
 

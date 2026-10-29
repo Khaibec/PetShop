@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
-import { AuthResponse, ExternalAccount, LoginRequest, RegisterRequest } from '../models/auth.model';
+import { AuthResponse, ExternalAccount, LinkInitiateResponse, LoginRequest, RegisterRequest, User } from '../models/auth.model';
 
 @Injectable({
   providedIn: 'root'
@@ -73,8 +73,16 @@ export class AuthService {
     this.currentUserSubject.next(authData);
   }
 
+  getCurrentUser(): Observable<User> {
+    return this.http.get<User>(`${this.apiUrl}/me`);
+  }
+
   getExternalAccounts(): Observable<ExternalAccount[]> {
     return this.http.get<ExternalAccount[]>(`${this.apiUrl}/external-accounts`);
+  }
+
+  initiateLinkExternal(provider: 'Google' | 'Facebook' | 'GitHub'): Observable<LinkInitiateResponse> {
+    return this.http.post<LinkInitiateResponse>(`${this.apiUrl}/link/initiate`, { provider });
   }
 
   unlinkExternalAccount(provider: string): Observable<any> {
